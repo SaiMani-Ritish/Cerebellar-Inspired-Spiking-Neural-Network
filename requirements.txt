@@ -1,0 +1,6 @@
+torch>=2.0
+snntorch>=0.7
+gymnasium>=0.29
+matplotlib>=3.7
+pandas>=2.0
+numpy>=1.24

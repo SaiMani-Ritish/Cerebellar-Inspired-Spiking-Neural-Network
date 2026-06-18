@@ -1,0 +1,45 @@
+== Diagnostic 1: Action distributions ===
+  quintic_polynomial         action=0:  50.2%  action=1:  49.8%  (n=907 steps over 20 episodes)
+  snn_surrogate_only         action=0: 100.0%  action=1:   0.0%  (n=189 steps over 20 episodes)
+    *** WARNING: snn_surrogate_only outputs one action >100% of the time — likely stereotyped policy ***     
+  snn_stdp                   action=0:   0.0%  action=1: 100.0%  (n=186 steps over 20 episodes)
+    *** WARNING: snn_stdp outputs one action >100% of the time — likely stereotyped policy ***
+  Saved: C:\Users\sriha\Downloads\SNN\snn_research\outputs\diagnostics\diag1_action_distribution.png
+
+=== Diagnostic 2: Position vs time trajectories ===
+  Saved: C:\Users\sriha\Downloads\SNN\snn_research\outputs\diagnostics\diag2_trajectory_seed00.png
+  Saved: C:\Users\sriha\Downloads\SNN\snn_research\outputs\diagnostics\diag2_trajectory_seed01.png
+  Saved: C:\Users\sriha\Downloads\SNN\snn_research\outputs\diagnostics\diag2_trajectory_seed02.png
+  Saved: C:\Users\sriha\Downloads\SNN\snn_research\outputs\diagnostics\diag2_trajectory_seed03.png
+  Saved: C:\Users\sriha\Downloads\SNN\snn_research\outputs\diagnostics\diag2_trajectory_seed04.png
+
+=== Diagnostic 3: Jerk-Accuracy Score (JAS) ===
+  Jerk baseline (quintic mean): 276.20
+
+  err_threshold = 0.05m:
+    quintic_polynomial         JAS=1.000  [PASS] beats baseline  (jerk=276.2, err=0.014)
+    snn_surrogate_only         JAS=0.031  [FAIL] below baseline  (jerk=354.7, err=1.271)
+    snn_stdp                   JAS=0.752  [FAIL] below baseline  (jerk=122.5, err=0.150)
+
+  err_threshold = 0.10m:
+    quintic_polynomial         JAS=1.000  [PASS] beats baseline  (jerk=276.2, err=0.014)
+    snn_surrogate_only         JAS=0.061  [FAIL] below baseline  (jerk=354.7, err=1.271)
+    snn_stdp                   JAS=1.504  [PASS] beats baseline  (jerk=122.5, err=0.150)
+
+  err_threshold = 0.15m:
+    quintic_polynomial         JAS=1.000  [PASS] beats baseline  (jerk=276.2, err=0.014)
+    snn_surrogate_only         JAS=0.092  [FAIL] below baseline  (jerk=354.7, err=1.271)
+    snn_stdp                   JAS=2.254  [PASS] beats baseline  (jerk=122.5, err=0.150)
+
+  err_threshold = 0.25m:
+    quintic_polynomial         JAS=1.000  [PASS] beats baseline  (jerk=276.2, err=0.014)
+    snn_surrogate_only         JAS=0.153  [FAIL] below baseline  (jerk=354.7, err=1.271)
+    snn_stdp                   JAS=2.254  [PASS] beats baseline  (jerk=122.5, err=0.150)
+
+  err_threshold = 0.50m:
+    quintic_polynomial         JAS=1.000  [PASS] beats baseline  (jerk=276.2, err=0.014)
+    snn_surrogate_only         JAS=0.306  [FAIL] below baseline  (jerk=354.7, err=1.271)
+    snn_stdp                   JAS=2.254  [PASS] beats baseline  (jerk=122.5, err=0.150)
+
+  JAS table saved: C:\Users\sriha\Downloads\SNN\snn_research\outputs\diagnostics\diag3_jas_scores.csv        
+  JAS plot saved: C:\Users\sriha\Downloads\SNN\snn_research\outputs\diagnostics\diag3_jas_plot.png

@@ -1,0 +1,16 @@
+controller,threshold,JAS,peak_jerk,endpoint_err
+quintic_polynomial,0.05,1.0,276.2,0.0145
+snn_surrogate_only,0.05,0.0306,354.73,1.2709
+snn_stdp,0.05,0.752,122.52,0.1499
+quintic_polynomial,0.1,1.0,276.2,0.0145
+snn_surrogate_only,0.1,0.0613,354.73,1.2709
+snn_stdp,0.1,1.5041,122.52,0.1499
+quintic_polynomial,0.15,1.0,276.2,0.0145
+snn_surrogate_only,0.15,0.0919,354.73,1.2709
+snn_stdp,0.15,2.2543,122.52,0.1499
+quintic_polynomial,0.25,1.0,276.2,0.0145
+snn_surrogate_only,0.25,0.1532,354.73,1.2709
+snn_stdp,0.25,2.2543,122.52,0.1499
+quintic_polynomial,0.5,1.0,276.2,0.0145
+snn_surrogate_only,0.5,0.3063,354.73,1.2709
+snn_stdp,0.5,2.2543,122.52,0.1499

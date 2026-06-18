@@ -1,0 +1,87 @@
+Capstone Research Proposal · Hypothesis Narrative
+Why a cerebellar SNN should learn to minimize jerk
+A first-principles argument for the research hypothesis, before experimental results are in.
+§1 — The nature of jerk
+Jerk is fundamentally a timing problem, not a magnitude problem
+Jerk — the third time derivative of position — appears whenever a system changes its rate of acceleration abruptly. In a robot arm, this happens at two specific moments: when motion initiates (acceleration onset) and when it terminates (deceleration onset). Between those two moments, if acceleration changes smoothly, jerk is low by definition. The physics don't care how fast the arm moves; they care about how sharply the velocity profile bends.
+
+This means jerk minimization is, at its core, a problem of deciding when to begin decelerating — and then executing that deceleration along a smooth curve. Start decelerating too late, and you must brake hard to stop in time, producing a sharp deceleration spike. Start too early and overshoot, then correct, producing two jerk events. The optimal solution is a single, well-timed, smoothly tapering deceleration — and the key word is timed.
+
+Jerk reduction is not primarily a force-control problem. It is a timing prediction problem: knowing, from the current motion state, exactly when to begin the deceleration curve.
+§2 — What polynomial planners actually do
+The analytical baseline solves a boundary value problem — and nothing else
+A quintic polynomial planner works by solving for six coefficients that satisfy six boundary conditions: initial and final position, velocity, and acceleration. Given those constraints and a total time T, there is exactly one fifth-degree polynomial that satisfies them all, and it happens to produce a smooth, jerk-minimized trajectory. The jerk function J(t) = 6a₃ + 24a₄t + 60a₅t² follows directly from the polynomial coefficients and is as smooth as the math allows.
+
+This is elegant, and it is also open-loop. The planner precomputes a trajectory, then executes it. If the environment perturbs the system — a load disturbance, sensor noise, friction variation — the planner has no mechanism to adapt. It does not know where it is in the motion; it knows only where it was told to be. Any deviation from the assumed conditions introduces jerk that the polynomial cannot anticipate, because the polynomial was solved once, offline, under idealized assumptions.
+
+Polynomial planner strength
+Analytically optimal
+For the idealized case — known start/end, no disturbances — jerk is mathematically minimized. Provably smooth in theory.
+Polynomial planner weakness
+Structurally open-loop
+Cannot update deceleration timing in response to real-time observations. Any perturbation to the assumed trajectory produces unjerk the planner cannot see.
+The SNN controller proposed here is designed to exploit exactly this gap. Rather than precomputing a timing decision, it learns the timing decision from observed spike patterns — and can update it incrementally across episodes through STDP weight updates.
+
+§3 — The biological model
+The cerebellum is a timing machine, not a position controller
+The cerebellum has been studied extensively as the neural substrate of smooth, coordinated motion. What is striking about its function — and what motivates this research — is that cerebellar circuits do not respond to positional error. They respond to predicted error. Yamazaki and Tanaka (2007) showed that the cerebellum functions as a forward model: given the current state of a limb, it predicts where the limb will be at a future time and fires corrective signals in anticipation of the deviation, not in reaction to it. Casellato et al. (2014) demonstrated this principle translated directly to robot arms, where cerebellar-inspired spiking controllers produced smoother trajectories than reactive controllers by initiating corrections before errors manifested in the measured state.
+
+The specific claim is not that SNNs are generally better controllers. It is narrower and more defensible: the mechanism by which a cerebellar SNN improves on reactive control — predictive corrective timing — maps directly onto the specific problem that causes jerk in robotic deceleration.
+
+In biological terms, the Purkinje cells of the cerebellum fire precisely timed inhibitory signals to motor nuclei. The timing — the interval between sensory input and corrective output — is learned through a form of spike-timing-dependent plasticity. The cerebellum does not compute a trajectory polynomial. It learns an association: "when I observe motion pattern X, I should fire inhibition in Y milliseconds." This is a timing lookup table, built from experience, and updated with each movement.
+
+§4 — The mechanistic hypothesis
+Why STDP is the right learning rule for deceleration onset prediction
+Standard backpropagation trains a network to map states to actions — it learns what force to apply given what position and velocity the system currently has. This is a spatial mapping. It has no intrinsic representation of when an action should occur relative to observed events. A feedforward ANN trained with gradient descent can approximate the polynomial planner's output, but it is doing so by memorizing state-action pairs, not by learning timing relationships. Any generalization across different initial velocities or times-to-stop requires the network to have seen those combinations in training.
+
+STDP is structurally different. The Hebbian STDP rule — "neurons that fire together, wire together; neurons that fire in sequence, wire in that sequence's direction" — is a temporal association learning rule. When a pre-synaptic neuron fires just before a post-synaptic neuron, the synapse between them strengthens in proportion to how close in time the two events were. Over many episodes, a STDP layer learns to associate specific input spike patterns with output spikes that arrive at the biologically correct temporal offset.
+
+The core mechanistic claim
+In the cart-pole deceleration task, the input spike pattern encodes velocity crossings — the moments when the cart's velocity crosses a threshold. The STDP timing layer will learn the association: "velocity crossed threshold X at time t₀ → deceleration spike should fire at t₀ + Δt." The Δt is learned from experience. Episodes where Δt was too small (late deceleration, high jerk) produce weaker synapses for that pattern. Episodes where Δt was appropriate produce stronger ones. The rule converges toward the timing that minimizes large corrective forces — which is exactly the timing that minimizes jerk.
+This is the central theoretical claim: STDP is not merely a biologically plausible learning rule applied to a robotics task for aesthetic reasons. It is the computationally appropriate learning rule for the specific structure of the jerk minimization problem. Jerk is caused by mistimed deceleration. STDP learns timing offsets from causal spike co-occurrence. The mapping between the problem structure and the learning rule structure is direct.
+
+§5 — The argument chain
+Six premises that lead to the testable prediction
+P1
+Jerk is a timing problem physics
+Peak jerk in robotic stops occurs when deceleration onset is mistimed. The magnitude of jerk scales directly with how far the actual onset is from the optimal onset. This is established by the jerk formula for polynomial trajectories.
+P2
+LIF neurons encode temporal information in spike timing neuroscience
+The leaky integrate-and-fire model accumulates input over time and fires when threshold is crossed. The precise moment of firing depends on the history of inputs — not just their current magnitude. This means a LIF neuron's spike timing carries information about temporal patterns in its inputs that a rate-coded ANN unit does not represent.
+P3
+STDP learns causal temporal associations neuroscience
+The STDP update rule strengthens synapses when pre fires before post (within the temporal window τ) and weakens them otherwise. This is not error-driven learning; it is associative temporal learning. The result of repeated STDP updates is a network that reliably predicts which output spikes should follow which input spike patterns, and by how many timesteps.
+P4
+The deceleration timing problem is a causal temporal association problem robotics
+The input to the controller — velocity spike patterns — causally precedes the required output — deceleration commands — by a fixed temporal offset determined by the physics of the trajectory. Learning this offset is exactly what STDP does. The biological and computational structures are isomorphic to the problem structure.
+P5
+Predictive deceleration onset reduces jerk physics
+A controller that correctly anticipates when to begin decelerating — firing the deceleration command before positional error accumulates — produces a smoother deceleration curve than one that reacts to measured error. This follows directly from P1: correct timing = lower jerk.
+P6
+Sparse spikes reduce computational cost structurally SNNs
+Because LIF neurons only fire when threshold is exceeded, most neurons are silent most of the time. Each spike triggers one synaptic operation; silence triggers none. The total energy cost scales with spike count, not network size. This is not an approximation — it is a structural property of threshold-gated computation. At 10–15% firing rates, FLOPs/step drop by 80–90% compared to equivalent dense ANNs.
+§6 — The hypothesis
+Testable research hypothesis
+A biologically-plausible Spiking Neural Network controller — using LIF neurons for temporal feature extraction and a STDP timing layer for deceleration onset prediction — will learn jerk-limited deceleration profiles that match or reduce the peak jerk of a quintic polynomial baseline, while achieving 70–85% fewer floating-point operations per inference step, because STDP is structurally suited to learn the causal temporal association between observed velocity spike patterns and optimal deceleration timing.
+§7 — Anticipated objections and responses
+Pre-empting the questions a reviewing professor is likely to raise
+Objection: "Polynomial planners already minimize jerk analytically. How can a learned approximation beat an analytical solution?"
+
+Response: The polynomial planner minimizes jerk under idealized conditions. The SNN is not competing with the planner's analytical optimality in the noiseless case — it is hypothesized to produce comparable or better jerk in the presence of state perturbations, because it can adapt its deceleration timing online through STDP updates, whereas the polynomial solution is fixed at precompute time. The hypothesis is about robustness and adaptivity, not about beating a mathematical lower bound.
+
+Objection: "STDP is unsupervised and local. How does it know that minimizing jerk is the objective?"
+
+Response: The STDP layer does not need to know the jerk objective explicitly. It learns the timing association between velocity spikes and deceleration commands through co-occurrence. The hidden layers, trained with surrogate gradient backprop against a reward signal that penalizes positional error, learn to produce deceleration-appropriate post-synaptic spikes. The STDP layer then learns the timing offset between those spikes and the velocity inputs. Jerk reduction emerges as a consequence of temporally precise deceleration — it is not directly optimized, but follows structurally from correct timing.
+
+Objection: "What if the null result comes in — the SNN doesn't reduce jerk?"
+
+Response: This is explicitly anticipated and framed as a valid contribution. If the SNN matches but does not beat polynomial jerk while achieving 80% compute savings, the result is "equivalent smoothness at dramatically lower energy cost," which is novel. If it underperforms on jerk, the paper contributes an analysis of why — likely discrete timestep quantization vs. continuous polynomial math, STDP convergence sensitivity, or insufficient temporal resolution in spike encoding — each of which is a concrete direction for future work. The hypothesis is falsifiable; falsification is a scientific result.
+
+§8 — Why this is novel at the level of a master's thesis
+The specific gap in the existing literature
+Prior SNN robotics work (Casellato et al. 2014; and more recent neuromorphic control papers) evaluates controllers primarily on accuracy — does the arm reach the target position — and on energy efficiency in the neuromorphic hardware sense. Jerk, the metric that governs mechanical wear, acoustic noise, and end-effector stability, is conspicuously absent from these evaluations. Prior trajectory planning literature (Macfarlane and Croft 2003; S-curve variants) evaluates jerk extensively but assumes a classical control architecture — they are not examining spiking systems.
+
+The novelty is the intersection: using jerk as the primary evaluation criterion to compare an SNN controller against the class of planners that were specifically designed to minimize it. This framing reveals whether SNN temporal dynamics can substitute for analytical trajectory smoothing — a question that has not been posed in either literature because neither community has had reason to look across the boundary.
+
+The contribution in one sentence
+This work is the first to test whether spike-timing-based computation can learn to solve the deceleration timing problem — the specific sub-problem that polynomial trajectory planners address analytically — and to measure the answer in the physically meaningful units of jerk.

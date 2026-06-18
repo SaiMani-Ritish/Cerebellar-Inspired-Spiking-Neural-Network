@@ -1,0 +1,451 @@
+
+<style>
+  :root {
+    --ink: var(--color-text-primary);
+    --ink-muted: var(--color-text-secondary);
+    --ink-faint: var(--color-text-tertiary);
+    --surface: var(--color-background-primary);
+    --surface-2: var(--color-background-secondary);
+    --border: var(--color-border-tertiary);
+    --border-em: var(--color-border-secondary);
+    --accent: #C8440A;
+    --accent-2: #1a6b5e;
+    --accent-3: #4a3d8c;
+    --mono: var(--font-mono);
+    --serif: var(--font-serif);
+    --sans: var(--font-sans);
+  }
+
+  .doc { max-width: 760px; margin: 0 auto; padding: 2rem 0 4rem; }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 10px;
+  }
+
+  .doc-title {
+    font-family: var(--serif);
+    font-size: 28px;
+    font-weight: 300;
+    font-style: italic;
+    line-height: 1.3;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+
+  .doc-subtitle {
+    font-size: 15px;
+    color: var(--ink-muted);
+    margin-bottom: 32px;
+    line-height: 1.5;
+  }
+
+  .divider {
+    border: none;
+    border-top: 0.5px solid var(--border);
+    margin: 28px 0;
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 10px;
+  }
+
+  .section-heading {
+    font-family: var(--serif);
+    font-size: 18px;
+    font-weight: 400;
+    color: var(--ink);
+    margin-bottom: 14px;
+    line-height: 1.35;
+  }
+
+  .body-text {
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--ink-muted);
+    margin-bottom: 14px;
+  }
+
+  .body-text em { font-style: italic; color: var(--ink); }
+  .body-text strong { font-weight: 500; color: var(--ink); }
+
+  .pull-quote {
+    border-left: 2px solid var(--accent);
+    padding: 10px 20px;
+    margin: 24px 0;
+    font-family: var(--serif);
+    font-size: 15px;
+    font-style: italic;
+    line-height: 1.6;
+    color: var(--ink);
+    background: var(--surface-2);
+    border-radius: 0 var(--border-radius-md) var(--border-radius-md) 0;
+  }
+
+  .callout {
+    border: 0.5px solid var(--border-em);
+    border-radius: var(--border-radius-lg);
+    padding: 16px 20px;
+    margin: 20px 0;
+    background: var(--surface-2);
+  }
+
+  .callout-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 8px;
+  }
+
+  .callout-text {
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--ink-muted);
+  }
+
+  .callout-text strong { font-weight: 500; color: var(--ink); }
+
+  .arg-chain {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 20px 0;
+  }
+
+  .arg-step {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    padding: 14px 0;
+    border-bottom: 0.5px solid var(--border);
+  }
+
+  .arg-step:last-child { border-bottom: none; }
+
+  .arg-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    min-width: 20px;
+    padding-top: 2px;
+    flex-shrink: 0;
+  }
+
+  .arg-content { flex: 1; }
+
+  .arg-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+
+  .arg-body {
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--ink-muted);
+  }
+
+  .hypothesis-box {
+    border: 1.5px solid var(--accent-3);
+    border-radius: var(--border-radius-lg);
+    padding: 20px 24px;
+    margin: 28px 0;
+    background: var(--surface-2);
+  }
+
+  .hypothesis-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent-3);
+    margin-bottom: 10px;
+  }
+
+  .hypothesis-text {
+    font-family: var(--serif);
+    font-size: 15px;
+    line-height: 1.7;
+    font-style: italic;
+    color: var(--ink);
+  }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 16px 0;
+  }
+
+  .mini-card {
+    border: 0.5px solid var(--border);
+    border-radius: var(--border-radius-lg);
+    padding: 14px 16px;
+    background: var(--surface);
+  }
+
+  .mini-card-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 6px;
+  }
+
+  .mini-card-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink);
+    margin-bottom: 5px;
+  }
+
+  .mini-card-body {
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--ink-muted);
+  }
+
+  .accent-bar {
+    border-left: 2px solid var(--accent-2);
+    padding-left: 16px;
+    margin: 16px 0;
+  }
+
+  .accent-bar-3 {
+    border-left: 2px solid var(--accent-3);
+    padding-left: 16px;
+    margin: 16px 0;
+  }
+
+  .tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    padding: 2px 8px;
+    border-radius: 3px;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+
+  .tag-neuro { background: #e8f4f1; color: #0f6e56; }
+  .tag-math  { background: #f0edf8; color: #3C3489; }
+  .tag-robot { background: #fff3ed; color: #993C1D; }
+
+  @media (max-width: 560px) {
+    .two-col { grid-template-columns: 1fr; }
+    .doc-title { font-size: 22px; }
+  }
+</style>
+
+<div class="doc">
+
+  <div class="eyebrow">Capstone Research Proposal · Hypothesis Narrative</div>
+  <div class="doc-title">Why a cerebellar SNN should learn to minimize jerk</div>
+  <div class="doc-subtitle">A first-principles argument for the research hypothesis, before experimental results are in.</div>
+
+  <hr class="divider">
+
+  <div class="section-label">§1 — The nature of jerk</div>
+  <div class="section-heading">Jerk is fundamentally a timing problem, not a magnitude problem</div>
+
+  <p class="body-text">
+    Jerk — the third time derivative of position — appears whenever a system changes its rate of acceleration abruptly. In a robot arm, this happens at two specific moments: when motion <em>initiates</em> (acceleration onset) and when it <em>terminates</em> (deceleration onset). Between those two moments, if acceleration changes smoothly, jerk is low by definition. The physics don't care how fast the arm moves; they care about how sharply the velocity profile bends.
+  </p>
+
+  <p class="body-text">
+    This means jerk minimization is, at its core, a problem of <em>deciding when to begin decelerating</em> — and then executing that deceleration along a smooth curve. Start decelerating too late, and you must brake hard to stop in time, producing a sharp deceleration spike. Start too early and overshoot, then correct, producing two jerk events. The optimal solution is a single, well-timed, smoothly tapering deceleration — and the key word is <strong>timed</strong>.
+  </p>
+
+  <div class="pull-quote">
+    Jerk reduction is not primarily a force-control problem. It is a timing prediction problem: knowing, from the current motion state, exactly when to begin the deceleration curve.
+  </div>
+
+  <hr class="divider">
+
+  <div class="section-label">§2 — What polynomial planners actually do</div>
+  <div class="section-heading">The analytical baseline solves a boundary value problem — and nothing else</div>
+
+  <p class="body-text">
+    A quintic polynomial planner works by solving for six coefficients that satisfy six boundary conditions: initial and final position, velocity, and acceleration. Given those constraints and a total time <em>T</em>, there is exactly one fifth-degree polynomial that satisfies them all, and it happens to produce a smooth, jerk-minimized trajectory. The jerk function <code style="font-family:var(--mono); font-size:12px; color:var(--accent);">J(t) = 6a₃ + 24a₄t + 60a₅t²</code> follows directly from the polynomial coefficients and is as smooth as the math allows.
+  </p>
+
+  <p class="body-text">
+    This is elegant, and it is also open-loop. The planner precomputes a trajectory, then executes it. If the environment perturbs the system — a load disturbance, sensor noise, friction variation — the planner has no mechanism to adapt. It does not know where it is in the motion; it knows only where it was told to be. Any deviation from the assumed conditions introduces jerk that the polynomial cannot anticipate, because the polynomial was solved once, offline, under idealized assumptions.
+  </p>
+
+  <div class="two-col">
+    <div class="mini-card">
+      <div class="mini-card-label">Polynomial planner strength</div>
+      <div class="mini-card-title">Analytically optimal</div>
+      <div class="mini-card-body">For the idealized case — known start/end, no disturbances — jerk is mathematically minimized. Provably smooth in theory.</div>
+    </div>
+    <div class="mini-card">
+      <div class="mini-card-label">Polynomial planner weakness</div>
+      <div class="mini-card-title">Structurally open-loop</div>
+      <div class="mini-card-body">Cannot update deceleration timing in response to real-time observations. Any perturbation to the assumed trajectory produces unjerk the planner cannot see.</div>
+    </div>
+  </div>
+
+  <p class="body-text">
+    The SNN controller proposed here is designed to exploit exactly this gap. Rather than precomputing a timing decision, it <em>learns</em> the timing decision from observed spike patterns — and can update it incrementally across episodes through STDP weight updates.
+  </p>
+
+  <hr class="divider">
+
+  <div class="section-label">§3 — The biological model</div>
+  <div class="section-heading">The cerebellum is a timing machine, not a position controller</div>
+
+  <p class="body-text">
+    The cerebellum has been studied extensively as the neural substrate of smooth, coordinated motion. What is striking about its function — and what motivates this research — is that cerebellar circuits do not respond to positional error. They respond to <em>predicted</em> error. Yamazaki and Tanaka (2007) showed that the cerebellum functions as a forward model: given the current state of a limb, it predicts where the limb will be at a future time and fires corrective signals in anticipation of the deviation, not in reaction to it. Casellato et al. (2014) demonstrated this principle translated directly to robot arms, where cerebellar-inspired spiking controllers produced smoother trajectories than reactive controllers by initiating corrections before errors manifested in the measured state.
+  </p>
+
+  <div class="accent-bar">
+    <p class="body-text" style="margin-bottom:0;">
+      The specific claim is not that SNNs are generally better controllers. It is narrower and more defensible: <strong>the mechanism by which a cerebellar SNN improves on reactive control — predictive corrective timing — maps directly onto the specific problem that causes jerk in robotic deceleration.</strong>
+    </p>
+  </div>
+
+  <p class="body-text">
+    In biological terms, the Purkinje cells of the cerebellum fire precisely timed inhibitory signals to motor nuclei. The timing — the interval between sensory input and corrective output — is learned through a form of spike-timing-dependent plasticity. The cerebellum does not compute a trajectory polynomial. It learns an association: "when I observe motion pattern X, I should fire inhibition in Y milliseconds." This is a timing lookup table, built from experience, and updated with each movement.
+  </p>
+
+  <hr class="divider">
+
+  <div class="section-label">§4 — The mechanistic hypothesis</div>
+  <div class="section-heading">Why STDP is the right learning rule for deceleration onset prediction</div>
+
+  <p class="body-text">
+    Standard backpropagation trains a network to map states to actions — it learns <em>what force</em> to apply given <em>what position and velocity</em> the system currently has. This is a spatial mapping. It has no intrinsic representation of <em>when</em> an action should occur relative to observed events. A feedforward ANN trained with gradient descent can approximate the polynomial planner's output, but it is doing so by memorizing state-action pairs, not by learning timing relationships. Any generalization across different initial velocities or times-to-stop requires the network to have seen those combinations in training.
+  </p>
+
+  <p class="body-text">
+    STDP is structurally different. The Hebbian STDP rule — "neurons that fire together, wire together; neurons that fire in sequence, wire in that sequence's direction" — is a <em>temporal association</em> learning rule. When a pre-synaptic neuron fires just before a post-synaptic neuron, the synapse between them strengthens in proportion to how close in time the two events were. Over many episodes, a STDP layer learns to associate specific input spike patterns with output spikes that arrive at the biologically correct temporal offset.
+  </p>
+
+  <div class="callout">
+    <div class="callout-label">The core mechanistic claim</div>
+    <div class="callout-text">
+      In the cart-pole deceleration task, the input spike pattern encodes velocity crossings — the moments when the cart's velocity crosses a threshold. The STDP timing layer will learn the association: <strong>"velocity crossed threshold X at time t₀ → deceleration spike should fire at t₀ + Δt."</strong> The Δt is learned from experience. Episodes where Δt was too small (late deceleration, high jerk) produce weaker synapses for that pattern. Episodes where Δt was appropriate produce stronger ones. The rule converges toward the timing that minimizes large corrective forces — which is exactly the timing that minimizes jerk.
+    </div>
+  </div>
+
+  <p class="body-text">
+    This is the central theoretical claim: <strong>STDP is not merely a biologically plausible learning rule applied to a robotics task for aesthetic reasons. It is the computationally appropriate learning rule for the specific structure of the jerk minimization problem.</strong> Jerk is caused by mistimed deceleration. STDP learns timing offsets from causal spike co-occurrence. The mapping between the problem structure and the learning rule structure is direct.
+  </p>
+
+  <hr class="divider">
+
+  <div class="section-label">§5 — The argument chain</div>
+  <div class="section-heading">Six premises that lead to the testable prediction</div>
+
+  <div class="arg-chain">
+    <div class="arg-step">
+      <div class="arg-num">P1</div>
+      <div class="arg-content">
+        <div class="arg-title">Jerk is a timing problem <span class="tag tag-math">physics</span></div>
+        <div class="arg-body">Peak jerk in robotic stops occurs when deceleration onset is mistimed. The magnitude of jerk scales directly with how far the actual onset is from the optimal onset. This is established by the jerk formula for polynomial trajectories.</div>
+      </div>
+    </div>
+    <div class="arg-step">
+      <div class="arg-num">P2</div>
+      <div class="arg-content">
+        <div class="arg-title">LIF neurons encode temporal information in spike timing <span class="tag tag-neuro">neuroscience</span></div>
+        <div class="arg-body">The leaky integrate-and-fire model accumulates input over time and fires when threshold is crossed. The precise moment of firing depends on the history of inputs — not just their current magnitude. This means a LIF neuron's spike timing carries information about temporal patterns in its inputs that a rate-coded ANN unit does not represent.</div>
+      </div>
+    </div>
+    <div class="arg-step">
+      <div class="arg-num">P3</div>
+      <div class="arg-content">
+        <div class="arg-title">STDP learns causal temporal associations <span class="tag tag-neuro">neuroscience</span></div>
+        <div class="arg-body">The STDP update rule strengthens synapses when pre fires before post (within the temporal window τ) and weakens them otherwise. This is not error-driven learning; it is associative temporal learning. The result of repeated STDP updates is a network that reliably predicts which output spikes should follow which input spike patterns, and by how many timesteps.</div>
+      </div>
+    </div>
+    <div class="arg-step">
+      <div class="arg-num">P4</div>
+      <div class="arg-content">
+        <div class="arg-title">The deceleration timing problem is a causal temporal association problem <span class="tag tag-robot">robotics</span></div>
+        <div class="arg-body">The input to the controller — velocity spike patterns — causally precedes the required output — deceleration commands — by a fixed temporal offset determined by the physics of the trajectory. Learning this offset is exactly what STDP does. The biological and computational structures are isomorphic to the problem structure.</div>
+      </div>
+    </div>
+    <div class="arg-step">
+      <div class="arg-num">P5</div>
+      <div class="arg-content">
+        <div class="arg-title">Predictive deceleration onset reduces jerk <span class="tag tag-math">physics</span></div>
+        <div class="arg-body">A controller that correctly anticipates when to begin decelerating — firing the deceleration command before positional error accumulates — produces a smoother deceleration curve than one that reacts to measured error. This follows directly from P1: correct timing = lower jerk.</div>
+      </div>
+    </div>
+    <div class="arg-step">
+      <div class="arg-num">P6</div>
+      <div class="arg-content">
+        <div class="arg-title">Sparse spikes reduce computational cost structurally <span class="tag tag-neuro">SNNs</span></div>
+        <div class="arg-body">Because LIF neurons only fire when threshold is exceeded, most neurons are silent most of the time. Each spike triggers one synaptic operation; silence triggers none. The total energy cost scales with spike count, not network size. This is not an approximation — it is a structural property of threshold-gated computation. At 10–15% firing rates, FLOPs/step drop by 80–90% compared to equivalent dense ANNs.</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <div class="section-label">§6 — The hypothesis</div>
+
+  <div class="hypothesis-box">
+    <div class="hypothesis-label">Testable research hypothesis</div>
+    <div class="hypothesis-text">
+      A biologically-plausible Spiking Neural Network controller — using LIF neurons for temporal feature extraction and a STDP timing layer for deceleration onset prediction — will learn jerk-limited deceleration profiles that match or reduce the peak jerk of a quintic polynomial baseline, while achieving 70–85% fewer floating-point operations per inference step, because STDP is structurally suited to learn the causal temporal association between observed velocity spike patterns and optimal deceleration timing.
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <div class="section-label">§7 — Anticipated objections and responses</div>
+  <div class="section-heading">Pre-empting the questions a reviewing professor is likely to raise</div>
+
+  <div class="accent-bar-3">
+    <p class="body-text" style="margin-bottom:6px;"><strong>Objection:</strong> "Polynomial planners already minimize jerk analytically. How can a learned approximation beat an analytical solution?"</p>
+    <p class="body-text" style="margin-bottom:0;"><strong>Response:</strong> The polynomial planner minimizes jerk under idealized conditions. The SNN is not competing with the planner's analytical optimality in the noiseless case — it is hypothesized to produce comparable or better jerk in the presence of state perturbations, because it can adapt its deceleration timing online through STDP updates, whereas the polynomial solution is fixed at precompute time. The hypothesis is about robustness and adaptivity, not about beating a mathematical lower bound.</p>
+  </div>
+
+  <div class="accent-bar-3">
+    <p class="body-text" style="margin-bottom:6px;"><strong>Objection:</strong> "STDP is unsupervised and local. How does it know that minimizing jerk is the objective?"</p>
+    <p class="body-text" style="margin-bottom:0;"><strong>Response:</strong> The STDP layer does not need to know the jerk objective explicitly. It learns the timing association between velocity spikes and deceleration commands through co-occurrence. The hidden layers, trained with surrogate gradient backprop against a reward signal that penalizes positional error, learn to produce deceleration-appropriate post-synaptic spikes. The STDP layer then learns the timing offset between those spikes and the velocity inputs. Jerk reduction emerges as a consequence of temporally precise deceleration — it is not directly optimized, but follows structurally from correct timing.</p>
+  </div>
+
+  <div class="accent-bar-3">
+    <p class="body-text" style="margin-bottom:6px;"><strong>Objection:</strong> "What if the null result comes in — the SNN doesn't reduce jerk?"</p>
+    <p class="body-text" style="margin-bottom:0;"><strong>Response:</strong> This is explicitly anticipated and framed as a valid contribution. If the SNN matches but does not beat polynomial jerk while achieving 80% compute savings, the result is "equivalent smoothness at dramatically lower energy cost," which is novel. If it underperforms on jerk, the paper contributes an analysis of <em>why</em> — likely discrete timestep quantization vs. continuous polynomial math, STDP convergence sensitivity, or insufficient temporal resolution in spike encoding — each of which is a concrete direction for future work. The hypothesis is falsifiable; falsification is a scientific result.</p>
+  </div>
+
+  <hr class="divider">
+
+  <div class="section-label">§8 — Why this is novel at the level of a master's thesis</div>
+  <div class="section-heading">The specific gap in the existing literature</div>
+
+  <p class="body-text">
+    Prior SNN robotics work (Casellato et al. 2014; and more recent neuromorphic control papers) evaluates controllers primarily on <em>accuracy</em> — does the arm reach the target position — and on <em>energy efficiency</em> in the neuromorphic hardware sense. Jerk, the metric that governs mechanical wear, acoustic noise, and end-effector stability, is conspicuously absent from these evaluations. Prior trajectory planning literature (Macfarlane and Croft 2003; S-curve variants) evaluates jerk extensively but assumes a classical control architecture — they are not examining spiking systems.
+  </p>
+
+  <p class="body-text">
+    The novelty is the intersection: using jerk as the primary evaluation criterion to compare an SNN controller against the class of planners that were specifically designed to minimize it. This framing reveals whether SNN temporal dynamics can substitute for analytical trajectory smoothing — a question that has not been posed in either literature because neither community has had reason to look across the boundary.
+  </p>
+
+  <div class="callout">
+    <div class="callout-label">The contribution in one sentence</div>
+    <div class="callout-text">
+      This work is the first to test whether <strong>spike-timing-based computation</strong> can learn to solve the <strong>deceleration timing problem</strong> — the specific sub-problem that polynomial trajectory planners address analytically — and to measure the answer in the physically meaningful units of jerk.
+    </div>
+  </div>
+
+</div>

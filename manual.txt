@@ -1,0 +1,463 @@
+aster's Research Manual · Complete Step-by-Step Guide
+Cerebellar-Inspired SNN Controllers
+for Jerk-Limited Robot Motion
+A full execution guide — from first pip install to arXiv submission. Every concept you need to learn, every tool you need to use, every result you need to produce.
+
+Prerequisites
+Phase 1: Foundation
+Phase 2: Build
+Phase 3: Experiment
+Phase 4: Write-Up
+Risks
+Paper Guide
+Setup
+Weeks 1–3
+Weeks 4–8
+Weeks 9–11
+Weeks 12–14
+Paper
+Risks
+Math Ref
+14-week timeline
+Ph 1 · Wks 1–3
+Phase 2 · Weeks 4–8
+Ph 3 · Wks 9–11
+Ph 4 · Wks 12–14
+◈
+Research anchor: "Can a biologically-plausible SNN — using LIF neurons and STDP-based timing — learn jerk-limited deceleration profiles that match or outperform polynomial trajectory planners, at lower computational cost?" Every decision traces back to this question.
+Prerequisites
+Environment Setup — Do This First
+Before writing a single line of research code, get your environment locked in and verified. 30 minutes now saves days of debugging later.
+
+What you need — Dell XPS 9530
+Your RTX 4050/4060/4070 GPU is a genuine asset for SNN research — surrogate gradient backprop is parallelised across GPU cores exactly like standard deep learning. Use Conda (Miniconda) as your environment manager: it resolves the CUDA toolkit, cuDNN, and PyTorch GPU bindings as a single consistent solve, which pip + venv cannot do reliably.
+
+Required
+Miniconda
+Download from conda.io/miniconda. Manages Python, CUDA toolkit, and cuDNN in one environment
+Core library
+snnTorch
+The main SNN framework. Built on PyTorch — runs on your RTX GPU with zero extra config once CUDA is set up via Conda
+Simulation
+Gymnasium
+OpenAI's env library. Cart-pole physics runs on CPU; your GPU accelerates the SNN training loop that wraps it
+IDE
+VS Code + Jupyter
+Notebooks for exploration, clean .py scripts for final reproducible code. Point VS Code at your Conda env kernel
+Installation — run this exactly
+Terminal · bash — Miniconda + CUDA
+# Step 1: Create a dedicated Conda environment with Python 3.11
+conda create -n snn_research python=3.11 -y
+conda activate snn_research
+
+# Step 2: Install PyTorch with CUDA 12.1 — Conda handles the toolkit automatically.
+# This is the key step that pip cannot do reliably.
+# Check pytorch.org/get-started if your driver version differs (run: nvidia-smi)
+conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia -y
+
+# Step 3: Install the research stack via pip (inside the Conda env)
+pip install snntorch gymnasium matplotlib pandas numpy
+
+# Step 4: Verify GPU is visible to PyTorch — this is your real sanity check
+python -c "import torch; print('CUDA available:', torch.cuda.is_available()); print('GPU:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'none')"
+
+# Step 5: Verify the full research stack
+python -c "import snntorch, gymnasium; import torch; print('snntorch', snntorch.__version__); print('torch', torch.__version__)"
+
+# Expected output:
+# CUDA available: True
+# GPU: NVIDIA GeForce RTX 4060 (or 4050 / 4070)
+◈
+Why Conda over pip + venv here: The pytorch-cuda=12.1 Conda package installs the matching CUDA runtime and cuDNN directly into the environment — no system-level driver conflicts. With plain pip install torch, PyTorch ships a bundled CUDA runtime that can mismatch the installed driver. Conda avoids this entirely. Check your driver version first with nvidia-smi — if it shows CUDA 12.4+, use pytorch-cuda=12.4 instead.
+✓
+GPU impact on your timeline: MNIST (your Week 3 checkpoint) drops from ~10 minutes on CPU to under 60 seconds on your RTX. The 100-episode Phase 3 experiment runs that previously needed parallelisation will complete in minutes. Google Colab is no longer a useful fallback — your local setup is strictly faster.
+File structure — set this up now
+Project layout
+snn_research/
+├── data.py          # event encoding from Gymnasium state
+├── model.py         # ANN, SNN (LIF), polynomial planner classes
+├── train.py         # training loop, spike/energy logging
+├── evaluate.py      # 4-metric benchmark runner
+├── results.py       # plots and tables generator
+├── notebooks/       # Jupyter notebooks for exploration
+│   ├── 01_lif_tutorial.ipynb
+│   ├── 02_mnist_sanity.ipynb
+│   └── 03_cartpole_baseline.ipynb
+└── outputs/         # saved models, figures, CSVs
+Phase 1
+Foundation — Weeks 1–3
+Three parallel knowledge tracks. Don't read linearly — run the code while reading the theory. The goal is working intuition, not memorisation.
+
+Week 1
+Track A: SNN Mechanics
+Run snnTorch LIF tutorial end-to-end
+Change τ and β — observe spike pattern shifts
+Read arXiv 2510.27379 sections 3 & 5
+Week 2
+Track B: Cerebellar Literature
+Read Yamazaki & Tanaka (2007)
+Read Casellato et al. (2014)
+Extract the key principle: predictive firing
+Week 3
+Track C: Engineering Baseline
+Learn S-curve and quintic polynomial math
+Understand jerk = d³pos/dt³
+CHECKPOINT: run 2-layer SNN on MNIST >90%
+Track A deep dive: LIF neurons and STDP
+The LIF (Leaky Integrate-and-Fire) neuron is your fundamental building block. Here's exactly what you need to understand and how to learn it:
+
+Concept	What it means	How to learn it	Why it matters for your work
+LIF neuron	Membrane voltage leaks over time. When it crosses a threshold, it fires a spike and resets	snnTorch tutorial, change β (decay rate) from 0.5 to 0.9 and watch what changes	Your entire controller is built from these. Understanding τ and β lets you tune responsiveness
+Surrogate gradient	Spikes are non-differentiable, so we use a smooth approximation (like a sigmoid) for backprop	Read snnTorch's training tutorial. The key function is FastSigmoid	This is how you train your hidden LIF layers before adding STDP. Required for Phase 2
+STDP	If neuron A fires just before B, the A→B synapse strengthens. If after, it weakens	snnTorch has STDP examples. Key params: A+, A−, τ+, τ−	Your novel contribution. This is what lets the network predict deceleration onset
+Spike sparsity	Most neurons are silent most of the time. This is the energy advantage	Count spikes per inference step in snnTorch. Compare to equivalent ANN multiply-accumulates	Your energy proxy metric. SNNs save compute because sparse spikes = fewer operations
+Event encoding	Converting continuous sensor data into discrete spike events	Implement the velocity_to_spikes function below. Test it on cart-pole data	The bridge between Gymnasium's continuous state space and your SNN input layer
+The event encoding function — implement this in Week 3
+data.py · event encoding
+def velocity_to_spikes(v, threshold=0.1):
+    """
+    Convert continuous cart velocity to a 2-bit spike event.
+    ON event  [1, 0]: velocity exceeded positive threshold
+    OFF event [0, 1]: velocity exceeded negative threshold
+    No event  [0, 0]: velocity in dead zone
+    
+    This is your bridge from continuous physics to discrete spikes.
+    The threshold value is a hyperparameter — tune it in Phase 2.
+    """
+    if v > threshold:
+        return [1, 0]   # ON event
+    elif v < -threshold:
+        return [0, 1]   # OFF event
+    else:
+        return [0, 0]   # no event (dead zone)
+
+def state_to_spikes(obs, thresholds=None):
+    """
+    Full cart-pole state [pos, vel, angle, angular_vel] → spike vector.
+    Apply velocity_to_spikes independently to each relevant dimension.
+    """
+    if thresholds is None:
+        thresholds = [0.05, 0.1, 0.02, 0.1]
+    spikes = []
+    for val, thr in zip(obs, thresholds):
+        spikes.extend(velocity_to_spikes(val, thr))
+    return spikes   # 8-dimensional spike vector
+Track B: What to extract from the cerebellar papers
+You don't need to implement Yamazaki & Tanaka's full model. What you need is the principle for your paper's Introduction and Related Work sections:
+
+◈
+The key biological insight: The cerebellum fires predictive corrective signals before error occurs — it's a forward model. Your STDP timing layer will do this computationally: it learns the timing offset between "velocity spike detected" and "deceleration command needed." This is your biological justification and your novelty claim.
+Track C: Polynomial planner math — what you must understand
+You'll implement this as your comparison baseline. Know the jerk formula cold:
+
+Math reference · quintic polynomial jerk
+# Quintic polynomial: pos(t) = a0 + a1*t + a2*t² + a3*t³ + a4*t⁴ + a5*t⁵
+# Jerk is the 3rd time derivative:
+# jerk(t) = 6*a3 + 24*a4*t + 60*a5*t²
+# 
+# Coefficients a0..a5 are solved analytically from 6 boundary conditions:
+# pos(0)=p0, vel(0)=v0, acc(0)=0  ← start state
+# pos(T)=pf, vel(T)=0, acc(T)=0   ← end state (stopped)
+#
+# The polynomial planner minimises jerk analytically.
+# Your SNN must LEARN to achieve a similar result through STDP timing.
+
+import numpy as np
+
+def quintic_coeffs(p0, pf, v0, T):
+    """Solve for quintic polynomial coefficients."""
+    a0, a1, a2 = p0, v0, 0.0
+    M = np.array([[T**3, T**4, T**5],
+                  [3*T**2, 4*T**3, 5*T**4],
+                  [6*T, 12*T**2, 20*T**3]])
+    b = np.array([pf - a0 - a1*T, 0 - a1, 0])
+    a3, a4, a5 = np.linalg.solve(M, b)
+    return [a0, a1, a2, a3, a4, a5]
+
+def compute_jerk(coeffs, t):
+    a0, a1, a2, a3, a4, a5 = coeffs
+    return 6*a3 + 24*a4*t + 60*a5*t**2
+Week 3 Checkpoint
+You pass if: You can run a 2-layer snnTorch feedforward network on MNIST and achieve >90% accuracy. Run it with python -c "import snntorch; ...". If this works, your environment is correct and you're ready for Phase 2. On your RTX GPU this completes in under 60 seconds — fast enough to iterate on β and τ values in real time. Make sure torch.cuda.is_available() returns True before starting.
+
+Phase 2
+Build & Validate — Weeks 4–8
+Two parallel tracks and one deliberate throwaway. The MNIST work is scaffolding — give it 5 days max, then move on.
+
+The throwaway: MNIST sanity check (Weeks 4–5, 5 days max)
+!
+Stop after 5 days regardless of polish. MNIST becomes Appendix A in your paper — 2 paragraphs. Its only job is to validate your energy proxy math before you apply it to robotics. Expected result: SNN ~96% vs ANN ~98%, but 85–90% fewer FLOPs.
+model.py · ANN vs SNN skeleton for MNIST
+import snntorch as snn
+import torch.nn as nn
+
+class SimpleSNN(nn.Module):
+    """2-layer LIF network for MNIST. Validates your SNN setup."""
+    def __init__(self, beta=0.9):
+        super().__init__()
+        self.fc1  = nn.Linear(784, 512)
+        self.lif1 = snn.Leaky(beta=beta)
+        self.fc2  = nn.Linear(512, 256)
+        self.lif2 = snn.Leaky(beta=beta)
+        self.fc3  = nn.Linear(256, 10)
+
+    def forward(self, x, num_steps=25):
+        mem1 = mem2 = self.lif1.init_leaky()
+        spike_count = 0
+        for step in range(num_steps):
+            cur1 = self.fc1(x)
+            spk1, mem1 = self.lif1(cur1, mem1)
+            cur2 = self.fc2(spk1)
+            spk2, mem2 = self.lif2(cur2, mem2)
+            spike_count += spk1.sum() + spk2.sum()
+        out = self.fc3(spk2)
+        return out, spike_count   # spike_count is your energy proxy
+The baseline: Quintic polynomial planner on cart-pole (Weeks 5–7)
+This gives you the clean baseline numbers everything else is measured against. Implement all four metrics for every controller you test, from the very start.
+
+M1
+Peak jerk (d³pos/dt³)
+Your core metric. The polynomial planner minimises this analytically. Your SNN must learn to match it.
+M2
+Endpoint positional error
+Accuracy proxy. SNN can be slightly worse here — but not dramatically. Track it always.
+M3
+FLOPs or spike count/step
+Energy proxy. SNNs should win here. Count sparse multiply-accumulates vs dense operations.
+M4
+Oscillation amplitude after stop
+Vibration proxy. How long does the pole ring after stopping? STDP should help reduce this.
+evaluate.py · 4-metric logging template
+import numpy as np
+
+def compute_jerk_series(positions, dt=0.02):
+    """Numerical 3rd derivative of position array."""
+    vel  = np.gradient(positions, dt)
+    acc  = np.gradient(vel, dt)
+    jerk = np.gradient(acc, dt)
+    return np.max(np.abs(jerk))   # peak jerk scalar
+
+def oscillation_amplitude(positions, stop_idx, window=50):
+    """RMS of position deviation after stop_idx."""
+    tail = positions[stop_idx:stop_idx + window]
+    return np.sqrt(np.mean((tail - tail.mean())**2))
+
+def log_episode(controller_name, positions, spike_count, flop_count):
+    metrics = {
+        'controller':  controller_name,
+        'peak_jerk':   compute_jerk_series(positions),
+        'endpoint_err': abs(positions[-1] - 0.0),    # target = center
+        'spike_count': spike_count,
+        'flops':       flop_count,
+        'osc_amp':     oscillation_amplitude(positions, stop_idx=-50),
+    }
+    return metrics
+The SNN controller: LIF + STDP architecture (Weeks 6–8, overlapping)
+This is your actual research contribution. The architecture has four components — understand each one before coding it:
+
+Layer	What it does	How it's trained	Key hyperparameters
+Input layer	Converts cart velocity crossings → ON/OFF spike pairs	No training — deterministic encoding	Threshold (0.1 default), dead zone width
+Hidden LIF layers (2–3)	Extract temporal features from the spike stream	Surrogate gradient backprop with FastSigmoid	β (decay), threshold, num_steps (25 default)
+STDP timing layer	Learns WHEN to fire deceleration commands based on trajectory history. Your novel contribution	Hebbian STDP update rule — NOT gradient descent	A+, A−, τ+ (20ms), τ− (20ms), learning rate
+Output layer	Torque/force command decoded from spike rate	Rate decoding — average spikes over time window	Decode window length, output scaling factor
+model.py · STDP update rule
+import torch
+
+def stdp_update(weights, pre_spikes, post_spikes,
+               A_plus=0.01, A_minus=0.01,
+               tau_plus=20.0, tau_minus=20.0, dt=1.0):
+    """
+    Spike-Timing Dependent Plasticity weight update.
+    
+    If pre fires BEFORE post  → strengthen synapse (causal, A_plus)
+    If pre fires AFTER post   → weaken synapse (anti-causal, A_minus)
+    
+    This is the biological learning rule. Not gradient descent.
+    The timing window (tau) controls how far apart spikes can be
+    and still affect each other. 20ms is biologically plausible.
+    """
+    dW = torch.zeros_like(weights)
+    
+    for t_pre, spk_pre in enumerate(pre_spikes):
+        for t_post, spk_post in enumerate(post_spikes):
+            if spk_pre > 0 and spk_post > 0:
+                delta_t = (t_post - t_pre) * dt
+                if delta_t > 0:   # pre before post: LTP
+                    dW += A_plus * torch.exp(
+                        torch.tensor(-delta_t / tau_plus))
+                else:               # post before pre: LTD
+                    dW -= A_minus * torch.exp(
+                        torch.tensor(delta_t / tau_minus))
+    return weights + dW
+!
+Budget Week 8 as a STDP debugging week. The learning window parameters (A+, A−, τ+, τ−) need careful tuning. Start with A+=A−=0.01 and τ+=τ−=20ms. If the STDP layer won't converge, fall back to surrogate-only — STDP becomes "future work" and you still have a paper.
+Week 8 Checkpoint
+You pass if: Your SNN controller completes 10 cart-pole episodes without crashing, and M3 (FLOPs/step) is measurably lower than the polynomial planner. You don't need all four metrics perfect yet — that's Phase 3's job.
+
+Phase 3
+Robotics Experiment — Weeks 9–11
+100 episodes per controller. Log everything. Your results table will carry the paper — clean data matters more than surprising results.
+
+Experiment design
+Run exactly 100 episodes for each of the three controllers. Log all four metrics per episode. Compute mean ± standard deviation for each metric. This is your results table:
+
+Controller	Peak Jerk	Endpoint Error	FLOPs/step	Osc. after stop
+Quintic polynomial	baseline	baseline	baseline	baseline
+SNN (surrogate grad only)	?	?	−70–80%	?
+SNN + STDP timing	?	?	−75–85%	?
+✓
+What you want to show: The STDP version reduces jerk and oscillation compared to the surrogate-only SNN, while maintaining similar accuracy. This validates that learned timing (STDP) adds value beyond the basic energy savings. Even partial improvement here is a result.
+The 100-episode runner — implement this in train.py
+train.py · experiment runner
+import gymnasium as gym
+import pandas as pd
+from evaluate import log_episode
+
+def run_experiment(controller, controller_name, n_episodes=100):
+    env = gym.make('CartPole-v1')
+    results = []
+    
+    for ep in range(n_episodes):
+        obs, _ = env.reset(seed=ep)    # fix seed for reproducibility
+        positions, spike_counts = [], []
+        done = False
+        
+        while not done:
+            action, spike_count = controller(obs)
+            obs, reward, terminated, truncated, _ = env.step(action)
+            positions.append(obs[0])   # cart position
+            spike_counts.append(spike_count)
+            done = terminated or truncated
+        
+        metrics = log_episode(
+            controller_name, positions,
+            sum(spike_counts), flop_count=None
+        )
+        results.append(metrics)
+        if ep % 10 == 0: print(f"Episode {ep}/100 done")
+    
+    env.close()
+    df = pd.DataFrame(results)
+    df.to_csv(f"outputs/{controller_name}_results.csv", index=False)
+    return df
+If the SNN underperforms on jerk — this is still valid
+◈
+Don't fear the negative result. A paper saying "SNNs save 80% of compute but don't yet match polynomial planners on jerk — here's why (discrete timesteps vs continuous polynomial math, spike noise, STDP convergence requirements) — and here's what's needed" is honest, publishable, and arguably more useful than cherry-picked positives. Frame limitations as future work directions.
+Optional level-up (Week 11, only if Phase 3 is done)
+Swap cart-pole for a 2-DOF robot arm in PyBullet or MuJoCo. Both are free and laptop-friendly. The physics are more realistic and the jerk problem is more visible on multi-joint motion. But do not sacrifice clean metrics for this upgrade.
+
+Terminal · install PyBullet if you upgrade
+pip install pybullet
+# Test:
+python -c "import pybullet; print('PyBullet OK')"
+Week 11 Checkpoint
+You pass if: You have a CSV file with 100-episode results for all three controllers, with all four metrics per episode. Mean ± std computed. This is your paper's Table 1. If you have this, Phase 3 is complete.
+
+Phase 4
+Analysis & Write-Up — Weeks 12–14
+The paper is already written in your data. Your job is to frame the story clearly and submit to the right venues in the right order.
+
+Results & plotting — do this in Week 12
+results.py · the four figures you need
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+
+def plot_jerk_comparison(dfs, names):
+    """Figure 1: Box plot of peak jerk across 100 episodes, all controllers."""
+    fig, ax = plt.subplots(figsize=(8, 4))
+    data = [df['peak_jerk'].values for df in dfs]
+    ax.boxplot(data, labels=names)
+    ax.set_ylabel('Peak Jerk (m/s³)')
+    ax.set_title('Jerk Comparison: 100 episodes each')
+    plt.tight_layout()
+    plt.savefig('outputs/fig1_jerk_comparison.pdf')
+
+def plot_energy_tradeoff(dfs, names):
+    """Figure 2: Scatter — FLOPs/step vs peak jerk. The key tradeoff plot."""
+    fig, ax = plt.subplots(figsize=(6, 5))
+    colors = ['#c8440a', '#1a6b5e', '#4a3d8c']
+    for df, name, c in zip(dfs, names, colors):
+        ax.scatter(df['flops'].mean(), df['peak_jerk'].mean(),
+                  label=name, color=c, s=120, zorder=5)
+        ax.errorbar(df['flops'].mean(), df['peak_jerk'].mean(),
+                   xerr=df['flops'].std(), yerr=df['peak_jerk'].std(),
+                   color=c, alpha=0.4)
+    ax.set_xlabel('FLOPs per step (lower = more efficient)')
+    ax.set_ylabel('Peak Jerk (lower = smoother)')
+    ax.legend()
+    plt.tight_layout()
+    plt.savefig('outputs/fig2_energy_tradeoff.pdf')
+Submission targets — in this exact order
+1st: arXiv
+Post preprint first
+Establishes priority. Gets your work visible before conference deadlines. Free. Submit as cs.NE or cs.RO
+2nd: IROS 2026
+Late-breaking results
+Lower bar than main track. Perfect for strong experimental results. Check iros2026.org for deadline
+3rd: ICRA 2027
+Workshop: neuromorphic robotics
+Abstract deadline usually Sept–Oct 2026. Best fit for your topic. Workshops are student-friendly
+Paper
+Complete Paper Structure — Section by Section
+Click each section to expand the detailed writing guide. Every section has a word count target, required content, and common pitfalls to avoid.
+
+Formula: [Problem] + [Approach] + [Key Result]
+
+"Jerk-limited robot motion planning typically relies on hand-engineered polynomial trajectory planners that minimize smoothness analytically. We propose a biologically-plausible Spiking Neural Network (SNN) controller inspired by cerebellar timing mechanisms, using Leaky Integrate-and-Fire neurons trained with Spike-Timing Dependent Plasticity (STDP). We evaluate our approach on cart-pole deceleration tasks against a quintic polynomial baseline across four metrics: peak jerk, endpoint accuracy, computational cost (FLOPs/step), and post-stop oscillation. Our SNN achieves [X]% jerk reduction at [Y]% lower compute cost, demonstrating that learned spike timing can substitute analytical trajectory smoothing in energy-constrained robotics contexts."
+
+Fill in [X] and [Y] from your Phase 3 results. Write this last.
+
+Risks
+Honest Risk Assessment & Mitigations
+Risk
+Likelihood
+Mitigation
+SNN doesn't beat poly planner on jerk
+Medium
+Reframe as "SNN matches jerk at 80% lower compute" — still novel. Lead with energy efficiency, present jerk as near-match.
+STDP layer is hard to tune (your biggest real risk)
+Med-High
+Budget all of Week 8 for debugging. Start with A+=A−=0.01, τ±=20ms. If it won't converge: fall back to surrogate-only SNN; STDP becomes "future work."
+Cart-pole too simple to show jerk clearly
+Low
+Use a velocity-limited stop task variant instead of full balancing. Or upgrade to 2-DOF arm in PyBullet (Week 11).
+Results not statistically clean
+Low
+100 episodes + standard deviation handles this. Fix random seeds (seed=episode_number) for reproducibility.
+Computation too slow on CPU
+Low
+Cart-pole in Gymnasium is near-instantaneous. If slow: reduce num_steps from 25 to 10, reduce hidden layer size. Free Colab T4 as fallback.
+Reference
+Math & Key Equations Reference Sheet
+The equations you need to know cold. Referenced in your Method section. Derivable from first principles if asked by reviewers.
+
+Name	Equation	What it means in your work
+LIF membrane	τ·dV/dt = −V + I(t)	Voltage leaks toward 0, driven by input current I. When V > V_th, spike fires and V resets
+Discrete LIF (snnTorch)	V[t+1] = β·V[t] + I[t]·(1−s[t])	β is your decay parameter (0–1). s[t]=1 when spike fires. This is what you tune
+STDP (potentiation)	ΔW = A+ · exp(−Δt/τ+), Δt>0	Pre fires before post: synapse strengthens. Δt is the time difference between spikes
+STDP (depression)	ΔW = −A− · exp(Δt/τ−), Δt<0	Post fires before pre: synapse weakens. Together LTP+LTD shape the timing window
+Jerk	J(t) = d³x/dt³ = ẍ̇	3rd time derivative of position. Your core metric. Numerically: np.gradient(np.gradient(np.gradient(pos)))
+Quintic jerk	J(t) = 6a₃ + 24a₄t + 60a₅t²	The polynomial baseline jerk function. Coefficients solved analytically from boundary conditions
+Surrogate gradient	∂s/∂U ≈ σ'(U) = σ(U)·(1−σ(U))	Approximate gradient of spike function. Makes SNN trainable with backprop despite non-differentiable spikes
+Spike count (energy proxy)	E ∝ Σₜ Σₙ sₙ(t)	Total spikes fired across all neurons and timesteps. Proportional to synaptic operations = energy cost
+Key papers — where to find them
+arXiv free
+SNN Future of Computing (arXiv 2510.27379)
+Read Sections 3 (energy) and 5 (training). Skip hardware sections for now
+Google Scholar
+Yamazaki & Tanaka (2007)
+"The cerebellum as a liquid state machine." Forward model principle
+Google Scholar
+Casellato et al. (2014)
+"Adaptive robotic control driven by a versatile spiking cerebellar network"
+Google Scholar
+Macfarlane & Croft (2003)
+"Jerk-bounded manipulator trajectory planning." Your polynomial baseline reference
+Docs
+snnTorch Documentation
+snntorch.readthedocs.io — has LIF tutorial, STDP examples, surrogate gradient guide
+Gymnasium
+CartPole-v1 env
+gymnasium.farama.org — state: [pos, vel, angle, angular_vel]. 4D input → your 8D spike vector
+SNN Research Manual · Cerebellar-Inspired Controllers for Jerk-Limited Robot Motion · 14-week plan

@@ -1,0 +1,1422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SNN Research Manual</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,700;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1917;
+    --ink-muted: #5c5a55;
+    --ink-faint: #9b9891;
+    --bg: #f5f3ee;
+    --bg-card: #ffffff;
+    --bg-code: #1e1c1a;
+    --accent: #c8440a;
+    --accent-2: #1a6b5e;
+    --accent-3: #4a3d8c;
+    --border: #ddd9d0;
+    --border-strong: #c8c3b8;
+    --tag-neural: #e8f4f1;
+    --tag-neural-text: #1a6b5e;
+    --tag-math: #f0edf8;
+    --tag-math-text: #4a3d8c;
+    --tag-code: #fff3ed;
+    --tag-code-text: #c8440a;
+    --tag-paper: #f5f3ee;
+    --tag-paper-text: #5c5a55;
+    --phase-1: #1a6b5e;
+    --phase-2: #c8440a;
+    --phase-3: #4a3d8c;
+    --phase-4: #8c6a1a;
+    --serif: 'Fraunces', Georgia, serif;
+    --sans: 'DM Sans', system-ui, sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  /* ─── HEADER ─────────────────────────────────── */
+  .masthead {
+    background: var(--ink);
+    color: #f5f3ee;
+    padding: 56px 48px 48px;
+    position: relative;
+    overflow: hidden;
+  }
+  .masthead::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.07);
+  }
+  .masthead::after {
+    content: '';
+    position: absolute;
+    bottom: -40px; left: 200px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  .masthead-eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(245,243,238,0.5);
+    margin-bottom: 16px;
+  }
+  .masthead h1 {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: clamp(26px, 4vw, 40px);
+    line-height: 1.2;
+    color: #f5f3ee;
+    max-width: 700px;
+    margin-bottom: 20px;
+  }
+  .masthead h1 em {
+    font-style: italic;
+    color: #f5f3ee;
+    opacity: 0.7;
+  }
+  .masthead-sub {
+    font-size: 14px;
+    color: rgba(245,243,238,0.6);
+    max-width: 560px;
+    line-height: 1.6;
+  }
+  .phase-pills {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 28px;
+  }
+  .phase-pill {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.15);
+    color: rgba(245,243,238,0.7);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+  .phase-pill:hover { background: rgba(255,255,255,0.1); color: #f5f3ee; }
+
+  /* ─── NAV ─────────────────────────────────────── */
+  .toc-bar {
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    padding: 0 48px;
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .toc-bar::-webkit-scrollbar { display: none; }
+  .toc-link {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    text-decoration: none;
+    padding: 14px 16px;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .toc-link:hover { color: var(--ink); border-bottom-color: var(--border-strong); }
+  .toc-link.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ─── LAYOUT ──────────────────────────────────── */
+  .content-wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 48px 48px 96px;
+  }
+
+  /* ─── SECTION HEADERS ─────────────────────────── */
+  .phase-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin: 56px 0 28px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .phase-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+  .p1 { background: #e8f4f1; color: var(--phase-1); }
+  .p2 { background: #fff3ed; color: var(--phase-2); }
+  .p3 { background: #f0edf8; color: var(--phase-3); }
+  .p4 { background: #faf3e0; color: var(--phase-4); }
+  .p0 { background: #f0f0f0; color: #444; }
+
+  .phase-header h2 {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 22px;
+    color: var(--ink);
+  }
+
+  /* ─── WEEK CARDS ──────────────────────────────── */
+  .week-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+  }
+  .week-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    position: relative;
+  }
+  .week-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 6px;
+  }
+  .week-title {
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+  .week-tasks {
+    list-style: none;
+    font-size: 13px;
+    color: var(--ink-muted);
+    line-height: 1.8;
+  }
+  .week-tasks li { padding-left: 14px; position: relative; }
+  .week-tasks li::before { content: '—'; position: absolute; left: 0; color: var(--ink-faint); }
+
+  /* ─── SECTION PROSE ───────────────────────────── */
+  .section-lead {
+    font-family: var(--serif);
+    font-weight: 300;
+    font-style: italic;
+    font-size: 17px;
+    color: var(--ink-muted);
+    border-left: 3px solid var(--border-strong);
+    padding-left: 20px;
+    margin: 0 0 28px;
+    line-height: 1.6;
+  }
+
+  h3 {
+    font-family: var(--sans);
+    font-weight: 500;
+    font-size: 15px;
+    color: var(--ink);
+    margin: 28px 0 10px;
+    letter-spacing: -0.01em;
+  }
+  h3::before {
+    content: '↳ ';
+    color: var(--accent);
+    font-weight: 400;
+  }
+
+  p { margin-bottom: 14px; color: var(--ink-muted); font-size: 14px; }
+
+  /* ─── CODE BLOCKS ─────────────────────────────── */
+  .code-block {
+    background: var(--bg-code);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin: 16px 0;
+    overflow-x: auto;
+    position: relative;
+  }
+  .code-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    margin-bottom: 12px;
+    display: block;
+  }
+  .code-block pre {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: #c8c3b8;
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .code-block .kw { color: #c084fc; }
+  .code-block .fn { color: #60d9a8; }
+  .code-block .st { color: #fbbf24; }
+  .code-block .cm { color: #6b7280; font-style: italic; }
+  .code-block .nu { color: #f87171; }
+  .code-block .va { color: #93c5fd; }
+
+  /* ─── RESOURCE CARDS ──────────────────────────── */
+  .resource-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+  }
+  .resource-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    transition: border-color 0.2s;
+  }
+  .resource-card:hover { border-color: var(--border-strong); }
+  .resource-type {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 3px;
+    display: inline-block;
+    margin-bottom: 8px;
+  }
+  .rt-paper { background: var(--tag-paper); color: var(--tag-paper-text); }
+  .rt-code { background: var(--tag-code); color: var(--tag-code-text); }
+  .rt-tool { background: var(--tag-neural); color: var(--tag-neural-text); }
+  .rt-concept { background: var(--tag-math); color: var(--tag-math-text); }
+  .resource-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink);
+    margin-bottom: 4px;
+    line-height: 1.4;
+  }
+  .resource-desc {
+    font-size: 12px;
+    color: var(--ink-faint);
+    line-height: 1.5;
+  }
+
+  /* ─── CONCEPT TABLE ───────────────────────────── */
+  .concept-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin: 16px 0;
+    background: var(--bg-card);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .concept-table th {
+    background: #f0ede6;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    padding: 10px 16px;
+    text-align: left;
+    font-weight: 500;
+  }
+  .concept-table td {
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+    color: var(--ink-muted);
+    vertical-align: top;
+  }
+  .concept-table tr:hover td { background: #faf9f7; }
+  .term-cell { font-weight: 500; color: var(--ink); font-family: var(--mono); font-size: 12px; }
+  .formula { font-family: var(--mono); font-size: 12px; color: var(--accent-3); background: var(--tag-math); padding: 2px 6px; border-radius: 3px; }
+
+  /* ─── RISK TABLE ──────────────────────────────── */
+  .risk-row { display: grid; grid-template-columns: 1fr 80px 2fr; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); align-items: start; font-size: 13px; }
+  .risk-row:last-child { border-bottom: none; }
+  .risk-row.header { background: #f0ede6; font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); }
+  .risk-table { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin: 16px 0; }
+  .risk-label { display: inline-block; font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 10px; }
+  .med { background: #fff3ed; color: #c8440a; }
+  .med-hi { background: #f0edf8; color: #4a3d8c; }
+  .low { background: #e8f4f1; color: #1a6b5e; }
+
+  /* ─── CALLOUT BOXES ───────────────────────────── */
+  .callout {
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    font-size: 13px;
+    line-height: 1.6;
+    display: flex;
+    gap: 14px;
+  }
+  .callout-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .callout-body { color: var(--ink-muted); }
+  .callout-body strong { color: var(--ink); font-weight: 500; }
+  .callout-tip { background: #e8f4f1; border-left: 3px solid var(--accent-2); }
+  .callout-warn { background: #fff3ed; border-left: 3px solid var(--accent); }
+  .callout-key { background: #f0edf8; border-left: 3px solid var(--accent-3); }
+
+  /* ─── METRIC TABLE ────────────────────────────── */
+  .metric-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 16px 0; }
+  .metric-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .metric-num { font-family: var(--serif); font-weight: 700; font-size: 28px; color: var(--ink); line-height: 1; }
+  .metric-label { font-size: 12px; color: var(--ink-faint); margin-top: 4px; }
+  .metric-desc { font-size: 13px; color: var(--ink-muted); margin-top: 8px; border-top: 1px solid var(--border); padding-top: 8px; }
+
+  /* ─── RESULTS TABLE ───────────────────────────── */
+  .results-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0; }
+  .results-table th { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; padding: 10px 12px; text-align: left; color: var(--ink-muted); border-bottom: 2px solid var(--border-strong); }
+  .results-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--ink-muted); vertical-align: middle; }
+  .results-table tr:hover td { background: #faf9f7; }
+  .results-table .highlight td { background: #f0edf8; color: var(--accent-3); font-weight: 500; }
+  .badge { display: inline-block; font-family: var(--mono); font-size: 10px; padding: 2px 7px; border-radius: 3px; }
+  .b-base { background: #f0ede6; color: var(--ink-muted); }
+  .b-good { background: var(--tag-neural); color: var(--tag-neural-text); }
+  .b-best { background: var(--tag-math); color: var(--tag-math-text); }
+
+  /* ─── PAPER SECTION ───────────────────────────── */
+  .paper-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin: 10px 0;
+    overflow: hidden;
+  }
+  .paper-section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .paper-section-header:hover { background: #faf9f7; }
+  .section-num { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); width: 20px; }
+  .section-name { font-weight: 500; font-size: 14px; color: var(--ink); flex: 1; }
+  .section-detail { font-size: 12px; color: var(--ink-faint); }
+  .section-chevron { font-size: 12px; color: var(--ink-faint); transition: transform 0.2s; }
+  .paper-section-body { padding: 4px 16px 16px 48px; font-size: 13px; color: var(--ink-muted); display: none; line-height: 1.7; }
+  .paper-section.open .paper-section-body { display: block; }
+  .paper-section.open .section-chevron { transform: rotate(90deg); }
+
+  /* ─── FOOTER ──────────────────────────────────── */
+  .footer-bar {
+    background: var(--ink);
+    padding: 24px 48px;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: rgba(245,243,238,0.35);
+    letter-spacing: 0.06em;
+  }
+
+  /* ─── CHECKPOINT ──────────────────────────────── */
+  .checkpoint {
+    background: linear-gradient(135deg, #1e1c1a 0%, #2a2724 100%);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    color: #c8c3b8;
+    font-size: 13px;
+  }
+  .checkpoint-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #60d9a8;
+    margin-bottom: 8px;
+  }
+  .checkpoint p { color: #9b9891; margin-bottom: 0; }
+  .checkpoint strong { color: #c8c3b8; }
+
+  /* ─── TIMELINE BAR ────────────────────────────── */
+  .timeline {
+    display: flex;
+    gap: 0;
+    margin: 24px 0;
+    border-radius: 8px;
+    overflow: hidden;
+    height: 40px;
+  }
+  .tl-seg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: white;
+    padding: 0 12px;
+    white-space: nowrap;
+    transition: flex 0.3s;
+  }
+  .tl-1 { background: var(--phase-1); flex: 3; }
+  .tl-2 { background: var(--phase-2); flex: 5; }
+  .tl-3 { background: var(--phase-3); flex: 3; }
+  .tl-4 { background: var(--phase-4); flex: 3; }
+
+  hr.section-rule { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+
+  @media (max-width: 640px) {
+    .masthead { padding: 36px 24px; }
+    .content-wrap { padding: 32px 24px 64px; }
+    .toc-bar { padding: 0 16px; }
+    .week-grid { grid-template-columns: 1fr; }
+    .metric-grid { grid-template-columns: 1fr; }
+    .risk-row { grid-template-columns: 1fr; }
+    .tl-seg { font-size: 8px; padding: 0 8px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ─── MASTHEAD ──────────────────────────────────── -->
+<div class="masthead">
+  <div class="masthead-eyebrow">Master's Research Manual · Complete Step-by-Step Guide</div>
+  <h1>Cerebellar-Inspired SNN Controllers<br><em>for Jerk-Limited Robot Motion</em></h1>
+  <p class="masthead-sub">A full execution guide — from first pip install to arXiv submission. Every concept you need to learn, every tool you need to use, every result you need to produce.</p>
+  <div class="phase-pills">
+    <a class="phase-pill" href="#phase0">Prerequisites</a>
+    <a class="phase-pill" href="#phase1">Phase 1: Foundation</a>
+    <a class="phase-pill" href="#phase2">Phase 2: Build</a>
+    <a class="phase-pill" href="#phase3">Phase 3: Experiment</a>
+    <a class="phase-pill" href="#phase4">Phase 4: Write-Up</a>
+    <a class="phase-pill" href="#risks">Risks</a>
+    <a class="phase-pill" href="#paper">Paper Guide</a>
+  </div>
+</div>
+
+<!-- ─── NAV ───────────────────────────────────────── -->
+<nav class="toc-bar">
+  <a class="toc-link active" href="#phase0">Setup</a>
+  <a class="toc-link" href="#phase1">Weeks 1–3</a>
+  <a class="toc-link" href="#phase2">Weeks 4–8</a>
+  <a class="toc-link" href="#phase3">Weeks 9–11</a>
+  <a class="toc-link" href="#phase4">Weeks 12–14</a>
+  <a class="toc-link" href="#paper">Paper</a>
+  <a class="toc-link" href="#risks">Risks</a>
+  <a class="toc-link" href="#math">Math Ref</a>
+</nav>
+
+<div class="content-wrap">
+
+  <!-- ─── OVERVIEW TIMELINE ───────────────────── -->
+  <div style="margin: 32px 0 40px;">
+    <div style="font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 10px;">14-week timeline</div>
+    <div class="timeline">
+      <div class="tl-seg tl-1">Ph 1 · Wks 1–3</div>
+      <div class="tl-seg tl-2">Phase 2 · Weeks 4–8</div>
+      <div class="tl-seg tl-3">Ph 3 · Wks 9–11</div>
+      <div class="tl-seg tl-4">Ph 4 · Wks 12–14</div>
+    </div>
+    <div class="callout callout-key">
+      <span class="callout-icon">◈</span>
+      <div class="callout-body"><strong>Research anchor:</strong> "Can a biologically-plausible SNN — using LIF neurons and STDP-based timing — learn jerk-limited deceleration profiles that match or outperform polynomial trajectory planners, at lower computational cost?" Every decision traces back to this question.</div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- PHASE 0: SETUP                              -->
+  <!-- ════════════════════════════════════════════ -->
+  <div id="phase0">
+    <div class="phase-header">
+      <span class="phase-num p0">Prerequisites</span>
+      <h2>Environment Setup — Do This First</h2>
+    </div>
+
+    <p class="section-lead">Before writing a single line of research code, get your environment locked in and verified. 30 minutes now saves days of debugging later.</p>
+
+    <h3>What you need — Dell XPS 9530</h3>
+    <p>Your RTX 4050/4060/4070 GPU is a genuine asset for SNN research — surrogate gradient backprop is parallelised across GPU cores exactly like standard deep learning. Use Conda (Miniconda) as your environment manager: it resolves the CUDA toolkit, cuDNN, and PyTorch GPU bindings as a single consistent solve, which <code style="font-size:11px">pip</code> + <code style="font-size:11px">venv</code> cannot do reliably.</p>
+
+    <div class="resource-grid">
+      <div class="resource-card">
+        <span class="resource-type rt-code">Required</span>
+        <div class="resource-name">Miniconda</div>
+        <div class="resource-desc">Download from conda.io/miniconda. Manages Python, CUDA toolkit, and cuDNN in one environment</div>
+      </div>
+      <div class="resource-card">
+        <span class="resource-type rt-tool">Core library</span>
+        <div class="resource-name">snnTorch</div>
+        <div class="resource-desc">The main SNN framework. Built on PyTorch — runs on your RTX GPU with zero extra config once CUDA is set up via Conda</div>
+      </div>
+      <div class="resource-card">
+        <span class="resource-type rt-tool">Simulation</span>
+        <div class="resource-name">Gymnasium</div>
+        <div class="resource-desc">OpenAI's env library. Cart-pole physics runs on CPU; your GPU accelerates the SNN training loop that wraps it</div>
+      </div>
+      <div class="resource-card">
+        <span class="resource-type rt-tool">IDE</span>
+        <div class="resource-name">VS Code + Jupyter</div>
+        <div class="resource-desc">Notebooks for exploration, clean .py scripts for final reproducible code. Point VS Code at your Conda env kernel</div>
+      </div>
+    </div>
+
+    <h3>Installation — run this exactly</h3>
+    <div class="code-block">
+      <span class="code-label">Terminal · bash — Miniconda + CUDA</span>
+      <pre><span class="cm"># Step 1: Create a dedicated Conda environment with Python 3.11</span>
+conda create -n snn_research python=<span class="nu">3.11</span> -y
+conda activate snn_research
+
+<span class="cm"># Step 2: Install PyTorch with CUDA 12.1 — Conda handles the toolkit automatically.</span>
+<span class="cm"># This is the key step that pip cannot do reliably.</span>
+<span class="cm"># Check pytorch.org/get-started if your driver version differs (run: nvidia-smi)</span>
+conda install pytorch torchvision torchaudio pytorch-cuda=<span class="nu">12.1</span> -c pytorch -c nvidia -y
+
+<span class="cm"># Step 3: Install the research stack via pip (inside the Conda env)</span>
+pip install snntorch gymnasium matplotlib pandas numpy
+
+<span class="cm"># Step 4: Verify GPU is visible to PyTorch — this is your real sanity check</span>
+python -c <span class="st">"import torch; print('CUDA available:', torch.cuda.is_available()); print('GPU:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'none')"</span>
+
+<span class="cm"># Step 5: Verify the full research stack</span>
+python -c <span class="st">"import snntorch, gymnasium; import torch; print('snntorch', snntorch.__version__); print('torch', torch.__version__)"</span>
+
+<span class="cm"># Expected output:</span>
+<span class="cm"># CUDA available: True</span>
+<span class="cm"># GPU: NVIDIA GeForce RTX 4060 (or 4050 / 4070)</span></pre>
+    </div>
+
+    <div class="callout callout-key">
+      <span class="callout-icon">◈</span>
+      <div class="callout-body"><strong>Why Conda over pip + venv here:</strong> The <code style="font-size:11px">pytorch-cuda=12.1</code> Conda package installs the matching CUDA runtime and cuDNN directly into the environment — no system-level driver conflicts. With plain <code style="font-size:11px">pip install torch</code>, PyTorch ships a bundled CUDA runtime that can mismatch the installed driver. Conda avoids this entirely. Check your driver version first with <code style="font-size:11px">nvidia-smi</code> — if it shows CUDA 12.4+, use <code style="font-size:11px">pytorch-cuda=12.4</code> instead.</div>
+    </div>
+
+    <div class="callout callout-tip">
+      <span class="callout-icon">✓</span>
+      <div class="callout-body"><strong>GPU impact on your timeline:</strong> MNIST (your Week 3 checkpoint) drops from ~10 minutes on CPU to under 60 seconds on your RTX. The 100-episode Phase 3 experiment runs that previously needed parallelisation will complete in minutes. Google Colab is no longer a useful fallback — your local setup is strictly faster.</div>
+    </div>
+
+    <h3>File structure — set this up now</h3>
+    <div class="code-block">
+      <span class="code-label">Project layout</span>
+      <pre>snn_research/
+├── data.py          <span class="cm"># event encoding from Gymnasium state</span>
+├── model.py         <span class="cm"># ANN, SNN (LIF), polynomial planner classes</span>
+├── train.py         <span class="cm"># training loop, spike/energy logging</span>
+├── evaluate.py      <span class="cm"># 4-metric benchmark runner</span>
+├── results.py       <span class="cm"># plots and tables generator</span>
+├── notebooks/       <span class="cm"># Jupyter notebooks for exploration</span>
+│   ├── 01_lif_tutorial.ipynb
+│   ├── 02_mnist_sanity.ipynb
+│   └── 03_cartpole_baseline.ipynb
+└── outputs/         <span class="cm"># saved models, figures, CSVs</span></pre>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- PHASE 1: FOUNDATION                         -->
+  <!-- ════════════════════════════════════════════ -->
+  <div id="phase1">
+    <div class="phase-header">
+      <span class="phase-num p1">Phase 1</span>
+      <h2>Foundation — Weeks 1–3</h2>
+    </div>
+
+    <p class="section-lead">Three parallel knowledge tracks. Don't read linearly — run the code while reading the theory. The goal is working intuition, not memorisation.</p>
+
+    <div class="week-grid">
+      <div class="week-card">
+        <div class="week-label">Week 1</div>
+        <div class="week-title">Track A: SNN Mechanics</div>
+        <ul class="week-tasks">
+          <li>Run snnTorch LIF tutorial end-to-end</li>
+          <li>Change τ and β — observe spike pattern shifts</li>
+          <li>Read arXiv 2510.27379 sections 3 &amp; 5</li>
+        </ul>
+      </div>
+      <div class="week-card">
+        <div class="week-label">Week 2</div>
+        <div class="week-title">Track B: Cerebellar Literature</div>
+        <ul class="week-tasks">
+          <li>Read Yamazaki &amp; Tanaka (2007)</li>
+          <li>Read Casellato et al. (2014)</li>
+          <li>Extract the key principle: predictive firing</li>
+        </ul>
+      </div>
+      <div class="week-card">
+        <div class="week-label">Week 3</div>
+        <div class="week-title">Track C: Engineering Baseline</div>
+        <ul class="week-tasks">
+          <li>Learn S-curve and quintic polynomial math</li>
+          <li>Understand jerk = d³pos/dt³</li>
+          <li>CHECKPOINT: run 2-layer SNN on MNIST &gt;90%</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Track A deep dive: LIF neurons and STDP</h3>
+    <p>The LIF (Leaky Integrate-and-Fire) neuron is your fundamental building block. Here's exactly what you need to understand and how to learn it:</p>
+
+    <table class="concept-table">
+      <thead><tr><th>Concept</th><th>What it means</th><th>How to learn it</th><th>Why it matters for your work</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="term-cell">LIF neuron</td>
+          <td>Membrane voltage leaks over time. When it crosses a threshold, it fires a spike and resets</td>
+          <td>snnTorch tutorial, change β (decay rate) from 0.5 to 0.9 and watch what changes</td>
+          <td>Your entire controller is built from these. Understanding τ and β lets you tune responsiveness</td>
+        </tr>
+        <tr>
+          <td class="term-cell">Surrogate gradient</td>
+          <td>Spikes are non-differentiable, so we use a smooth approximation (like a sigmoid) for backprop</td>
+          <td>Read snnTorch's training tutorial. The key function is <code class="formula">FastSigmoid</code></td>
+          <td>This is how you train your hidden LIF layers before adding STDP. Required for Phase 2</td>
+        </tr>
+        <tr>
+          <td class="term-cell">STDP</td>
+          <td>If neuron A fires just before B, the A→B synapse strengthens. If after, it weakens</td>
+          <td>snnTorch has STDP examples. Key params: A+, A−, τ+, τ−</td>
+          <td>Your novel contribution. This is what lets the network predict deceleration onset</td>
+        </tr>
+        <tr>
+          <td class="term-cell">Spike sparsity</td>
+          <td>Most neurons are silent most of the time. This is the energy advantage</td>
+          <td>Count spikes per inference step in snnTorch. Compare to equivalent ANN multiply-accumulates</td>
+          <td>Your energy proxy metric. SNNs save compute because sparse spikes = fewer operations</td>
+        </tr>
+        <tr>
+          <td class="term-cell">Event encoding</td>
+          <td>Converting continuous sensor data into discrete spike events</td>
+          <td>Implement the velocity_to_spikes function below. Test it on cart-pole data</td>
+          <td>The bridge between Gymnasium's continuous state space and your SNN input layer</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>The event encoding function — implement this in Week 3</h3>
+    <div class="code-block">
+      <span class="code-label">data.py · event encoding</span>
+      <pre><span class="kw">def</span> <span class="fn">velocity_to_spikes</span>(v, threshold=<span class="nu">0.1</span>):
+    <span class="st">"""
+    Convert continuous cart velocity to a 2-bit spike event.
+    ON event  [1, 0]: velocity exceeded positive threshold
+    OFF event [0, 1]: velocity exceeded negative threshold
+    No event  [0, 0]: velocity in dead zone
+    
+    This is your bridge from continuous physics to discrete spikes.
+    The threshold value is a hyperparameter — tune it in Phase 2.
+    """</span>
+    <span class="kw">if</span> v > threshold:
+        <span class="kw">return</span> [<span class="nu">1</span>, <span class="nu">0</span>]   <span class="cm"># ON event</span>
+    <span class="kw">elif</span> v < -threshold:
+        <span class="kw">return</span> [<span class="nu">0</span>, <span class="nu">1</span>]   <span class="cm"># OFF event</span>
+    <span class="kw">else</span>:
+        <span class="kw">return</span> [<span class="nu">0</span>, <span class="nu">0</span>]   <span class="cm"># no event (dead zone)</span>
+
+<span class="kw">def</span> <span class="fn">state_to_spikes</span>(obs, thresholds=<span class="kw">None</span>):
+    <span class="st">"""
+    Full cart-pole state [pos, vel, angle, angular_vel] → spike vector.
+    Apply velocity_to_spikes independently to each relevant dimension.
+    """</span>
+    <span class="kw">if</span> thresholds <span class="kw">is</span> <span class="kw">None</span>:
+        thresholds = [<span class="nu">0.05</span>, <span class="nu">0.1</span>, <span class="nu">0.02</span>, <span class="nu">0.1</span>]
+    spikes = []
+    <span class="kw">for</span> val, thr <span class="kw">in</span> zip(obs, thresholds):
+        spikes.extend(velocity_to_spikes(val, thr))
+    <span class="kw">return</span> spikes   <span class="cm"># 8-dimensional spike vector</span></pre>
+    </div>
+
+    <h3>Track B: What to extract from the cerebellar papers</h3>
+    <p>You don't need to implement Yamazaki &amp; Tanaka's full model. What you need is the <em>principle</em> for your paper's Introduction and Related Work sections:</p>
+
+    <div class="callout callout-key">
+      <span class="callout-icon">◈</span>
+      <div class="callout-body"><strong>The key biological insight:</strong> The cerebellum fires predictive corrective signals <em>before</em> error occurs — it's a forward model. Your STDP timing layer will do this computationally: it learns the timing offset between "velocity spike detected" and "deceleration command needed." This is your biological justification and your novelty claim.</div>
+    </div>
+
+    <h3>Track C: Polynomial planner math — what you must understand</h3>
+    <p>You'll implement this as your comparison baseline. Know the jerk formula cold:</p>
+
+    <div class="code-block">
+      <span class="code-label">Math reference · quintic polynomial jerk</span>
+      <pre><span class="cm"># Quintic polynomial: pos(t) = a0 + a1*t + a2*t² + a3*t³ + a4*t⁴ + a5*t⁵</span>
+<span class="cm"># Jerk is the 3rd time derivative:</span>
+<span class="cm"># jerk(t) = 6*a3 + 24*a4*t + 60*a5*t²</span>
+<span class="cm"># </span>
+<span class="cm"># Coefficients a0..a5 are solved analytically from 6 boundary conditions:</span>
+<span class="cm"># pos(0)=p0, vel(0)=v0, acc(0)=0  ← start state</span>
+<span class="cm"># pos(T)=pf, vel(T)=0, acc(T)=0   ← end state (stopped)</span>
+<span class="cm">#</span>
+<span class="cm"># The polynomial planner minimises jerk analytically.</span>
+<span class="cm"># Your SNN must LEARN to achieve a similar result through STDP timing.</span>
+
+<span class="kw">import</span> numpy <span class="kw">as</span> np
+
+<span class="kw">def</span> <span class="fn">quintic_coeffs</span>(p0, pf, v0, T):
+    <span class="st">"""Solve for quintic polynomial coefficients."""</span>
+    a0, a1, a2 = p0, v0, <span class="nu">0.0</span>
+    M = np.array([[T**<span class="nu">3</span>, T**<span class="nu">4</span>, T**<span class="nu">5</span>],
+                  [<span class="nu">3</span>*T**<span class="nu">2</span>, <span class="nu">4</span>*T**<span class="nu">3</span>, <span class="nu">5</span>*T**<span class="nu">4</span>],
+                  [<span class="nu">6</span>*T, <span class="nu">12</span>*T**<span class="nu">2</span>, <span class="nu">20</span>*T**<span class="nu">3</span>]])
+    b = np.array([pf - a0 - a1*T, <span class="nu">0</span> - a1, <span class="nu">0</span>])
+    a3, a4, a5 = np.linalg.solve(M, b)
+    <span class="kw">return</span> [a0, a1, a2, a3, a4, a5]
+
+<span class="kw">def</span> <span class="fn">compute_jerk</span>(coeffs, t):
+    a0, a1, a2, a3, a4, a5 = coeffs
+    <span class="kw">return</span> <span class="nu">6</span>*a3 + <span class="nu">24</span>*a4*t + <span class="nu">60</span>*a5*t**<span class="nu">2</span></pre>
+    </div>
+
+    <div class="checkpoint">
+      <div class="checkpoint-label">Week 3 Checkpoint</div>
+      <p><strong>You pass if:</strong> You can run a 2-layer snnTorch feedforward network on MNIST and achieve &gt;90% accuracy. Run it with <code>python -c "import snntorch; ..."</code>. If this works, your environment is correct and you're ready for Phase 2. On your RTX GPU this completes in under 60 seconds — fast enough to iterate on β and τ values in real time. Make sure <code>torch.cuda.is_available()</code> returns <code>True</code> before starting.</p>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- PHASE 2: BUILD                              -->
+  <!-- ════════════════════════════════════════════ -->
+  <div id="phase2">
+    <div class="phase-header">
+      <span class="phase-num p2">Phase 2</span>
+      <h2>Build &amp; Validate — Weeks 4–8</h2>
+    </div>
+
+    <p class="section-lead">Two parallel tracks and one deliberate throwaway. The MNIST work is scaffolding — give it 5 days max, then move on.</p>
+
+    <h3>The throwaway: MNIST sanity check (Weeks 4–5, 5 days max)</h3>
+
+    <div class="callout callout-warn">
+      <span class="callout-icon">!</span>
+      <div class="callout-body"><strong>Stop after 5 days regardless of polish.</strong> MNIST becomes Appendix A in your paper — 2 paragraphs. Its only job is to validate your energy proxy math before you apply it to robotics. Expected result: SNN ~96% vs ANN ~98%, but 85–90% fewer FLOPs.</div>
+    </div>
+
+    <div class="code-block">
+      <span class="code-label">model.py · ANN vs SNN skeleton for MNIST</span>
+      <pre><span class="kw">import</span> snntorch <span class="kw">as</span> snn
+<span class="kw">import</span> torch.nn <span class="kw">as</span> nn
+
+<span class="kw">class</span> <span class="fn">SimpleSNN</span>(nn.Module):
+    <span class="st">"""2-layer LIF network for MNIST. Validates your SNN setup."""</span>
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, beta=<span class="nu">0.9</span>):
+        super().__init__()
+        self.fc1  = nn.Linear(<span class="nu">784</span>, <span class="nu">512</span>)
+        self.lif1 = snn.Leaky(beta=beta)
+        self.fc2  = nn.Linear(<span class="nu">512</span>, <span class="nu">256</span>)
+        self.lif2 = snn.Leaky(beta=beta)
+        self.fc3  = nn.Linear(<span class="nu">256</span>, <span class="nu">10</span>)
+
+    <span class="kw">def</span> <span class="fn">forward</span>(self, x, num_steps=<span class="nu">25</span>):
+        mem1 = mem2 = self.lif1.init_leaky()
+        spike_count = <span class="nu">0</span>
+        <span class="kw">for</span> step <span class="kw">in</span> range(num_steps):
+            cur1 = self.fc1(x)
+            spk1, mem1 = self.lif1(cur1, mem1)
+            cur2 = self.fc2(spk1)
+            spk2, mem2 = self.lif2(cur2, mem2)
+            spike_count += spk1.sum() + spk2.sum()
+        out = self.fc3(spk2)
+        <span class="kw">return</span> out, spike_count   <span class="cm"># spike_count is your energy proxy</span></pre>
+    </div>
+
+    <h3>The baseline: Quintic polynomial planner on cart-pole (Weeks 5–7)</h3>
+    <p>This gives you the clean baseline numbers everything else is measured against. Implement all four metrics for every controller you test, from the very start.</p>
+
+    <div class="metric-grid">
+      <div class="metric-card">
+        <div class="metric-num" style="color: var(--phase-2);">M1</div>
+        <div class="metric-label">Peak jerk (d³pos/dt³)</div>
+        <div class="metric-desc">Your core metric. The polynomial planner minimises this analytically. Your SNN must learn to match it.</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-num" style="color: var(--phase-1);">M2</div>
+        <div class="metric-label">Endpoint positional error</div>
+        <div class="metric-desc">Accuracy proxy. SNN can be slightly worse here — but not dramatically. Track it always.</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-num" style="color: var(--phase-3);">M3</div>
+        <div class="metric-label">FLOPs or spike count/step</div>
+        <div class="metric-desc">Energy proxy. SNNs should win here. Count sparse multiply-accumulates vs dense operations.</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-num" style="color: var(--phase-4);">M4</div>
+        <div class="metric-label">Oscillation amplitude after stop</div>
+        <div class="metric-desc">Vibration proxy. How long does the pole ring after stopping? STDP should help reduce this.</div>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <span class="code-label">evaluate.py · 4-metric logging template</span>
+      <pre><span class="kw">import</span> numpy <span class="kw">as</span> np
+
+<span class="kw">def</span> <span class="fn">compute_jerk_series</span>(positions, dt=<span class="nu">0.02</span>):
+    <span class="st">"""Numerical 3rd derivative of position array."""</span>
+    vel  = np.gradient(positions, dt)
+    acc  = np.gradient(vel, dt)
+    jerk = np.gradient(acc, dt)
+    <span class="kw">return</span> np.max(np.abs(jerk))   <span class="cm"># peak jerk scalar</span>
+
+<span class="kw">def</span> <span class="fn">oscillation_amplitude</span>(positions, stop_idx, window=<span class="nu">50</span>):
+    <span class="st">"""RMS of position deviation after stop_idx."""</span>
+    tail = positions[stop_idx:stop_idx + window]
+    <span class="kw">return</span> np.sqrt(np.mean((tail - tail.mean())**<span class="nu">2</span>))
+
+<span class="kw">def</span> <span class="fn">log_episode</span>(controller_name, positions, spike_count, flop_count):
+    metrics = {
+        <span class="st">'controller'</span>:  controller_name,
+        <span class="st">'peak_jerk'</span>:   compute_jerk_series(positions),
+        <span class="st">'endpoint_err'</span>: abs(positions[-<span class="nu">1</span>] - <span class="nu">0.0</span>),    <span class="cm"># target = center</span>
+        <span class="st">'spike_count'</span>: spike_count,
+        <span class="st">'flops'</span>:       flop_count,
+        <span class="st">'osc_amp'</span>:     oscillation_amplitude(positions, stop_idx=-<span class="nu">50</span>),
+    }
+    <span class="kw">return</span> metrics</pre>
+    </div>
+
+    <h3>The SNN controller: LIF + STDP architecture (Weeks 6–8, overlapping)</h3>
+    <p>This is your actual research contribution. The architecture has four components — understand each one before coding it:</p>
+
+    <table class="concept-table">
+      <thead><tr><th>Layer</th><th>What it does</th><th>How it's trained</th><th>Key hyperparameters</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="term-cell">Input layer</td>
+          <td>Converts cart velocity crossings → ON/OFF spike pairs</td>
+          <td>No training — deterministic encoding</td>
+          <td>Threshold (0.1 default), dead zone width</td>
+        </tr>
+        <tr>
+          <td class="term-cell">Hidden LIF layers (2–3)</td>
+          <td>Extract temporal features from the spike stream</td>
+          <td>Surrogate gradient backprop with FastSigmoid</td>
+          <td>β (decay), threshold, num_steps (25 default)</td>
+        </tr>
+        <tr>
+          <td class="term-cell">STDP timing layer</td>
+          <td>Learns WHEN to fire deceleration commands based on trajectory history. Your novel contribution</td>
+          <td>Hebbian STDP update rule — NOT gradient descent</td>
+          <td>A+, A−, τ+ (20ms), τ− (20ms), learning rate</td>
+        </tr>
+        <tr>
+          <td class="term-cell">Output layer</td>
+          <td>Torque/force command decoded from spike rate</td>
+          <td>Rate decoding — average spikes over time window</td>
+          <td>Decode window length, output scaling factor</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="code-block">
+      <span class="code-label">model.py · STDP update rule</span>
+      <pre><span class="kw">import</span> torch
+
+<span class="kw">def</span> <span class="fn">stdp_update</span>(weights, pre_spikes, post_spikes,
+               A_plus=<span class="nu">0.01</span>, A_minus=<span class="nu">0.01</span>,
+               tau_plus=<span class="nu">20.0</span>, tau_minus=<span class="nu">20.0</span>, dt=<span class="nu">1.0</span>):
+    <span class="st">"""
+    Spike-Timing Dependent Plasticity weight update.
+    
+    If pre fires BEFORE post  → strengthen synapse (causal, A_plus)
+    If pre fires AFTER post   → weaken synapse (anti-causal, A_minus)
+    
+    This is the biological learning rule. Not gradient descent.
+    The timing window (tau) controls how far apart spikes can be
+    and still affect each other. 20ms is biologically plausible.
+    """</span>
+    dW = torch.zeros_like(weights)
+    
+    <span class="kw">for</span> t_pre, spk_pre <span class="kw">in</span> enumerate(pre_spikes):
+        <span class="kw">for</span> t_post, spk_post <span class="kw">in</span> enumerate(post_spikes):
+            <span class="kw">if</span> spk_pre > <span class="nu">0</span> <span class="kw">and</span> spk_post > <span class="nu">0</span>:
+                delta_t = (t_post - t_pre) * dt
+                <span class="kw">if</span> delta_t > <span class="nu">0</span>:   <span class="cm"># pre before post: LTP</span>
+                    dW += A_plus * torch.exp(
+                        torch.tensor(-delta_t / tau_plus))
+                <span class="kw">else</span>:               <span class="cm"># post before pre: LTD</span>
+                    dW -= A_minus * torch.exp(
+                        torch.tensor(delta_t / tau_minus))
+    <span class="kw">return</span> weights + dW</pre>
+    </div>
+
+    <div class="callout callout-warn">
+      <span class="callout-icon">!</span>
+      <div class="callout-body"><strong>Budget Week 8 as a STDP debugging week.</strong> The learning window parameters (A+, A−, τ+, τ−) need careful tuning. Start with A+=A−=0.01 and τ+=τ−=20ms. If the STDP layer won't converge, fall back to surrogate-only — STDP becomes "future work" and you still have a paper.</div>
+    </div>
+
+    <div class="checkpoint">
+      <div class="checkpoint-label">Week 8 Checkpoint</div>
+      <p><strong>You pass if:</strong> Your SNN controller completes 10 cart-pole episodes without crashing, and M3 (FLOPs/step) is measurably lower than the polynomial planner. You don't need all four metrics perfect yet — that's Phase 3's job.</p>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- PHASE 3: EXPERIMENT                         -->
+  <!-- ════════════════════════════════════════════ -->
+  <div id="phase3">
+    <div class="phase-header">
+      <span class="phase-num p3">Phase 3</span>
+      <h2>Robotics Experiment — Weeks 9–11</h2>
+    </div>
+
+    <p class="section-lead">100 episodes per controller. Log everything. Your results table will carry the paper — clean data matters more than surprising results.</p>
+
+    <h3>Experiment design</h3>
+    <p>Run exactly 100 episodes for each of the three controllers. Log all four metrics per episode. Compute mean ± standard deviation for each metric. This is your results table:</p>
+
+    <table class="results-table">
+      <thead>
+        <tr>
+          <th>Controller</th>
+          <th>Peak Jerk</th>
+          <th>Endpoint Error</th>
+          <th>FLOPs/step</th>
+          <th>Osc. after stop</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Quintic polynomial</td>
+          <td><span class="badge b-base">baseline</span></td>
+          <td><span class="badge b-base">baseline</span></td>
+          <td><span class="badge b-base">baseline</span></td>
+          <td><span class="badge b-base">baseline</span></td>
+        </tr>
+        <tr>
+          <td>SNN (surrogate grad only)</td>
+          <td>?</td>
+          <td>?</td>
+          <td><span class="badge b-good">−70–80%</span></td>
+          <td>?</td>
+        </tr>
+        <tr class="highlight">
+          <td>SNN + STDP timing</td>
+          <td>?</td>
+          <td>?</td>
+          <td><span class="badge b-best">−75–85%</span></td>
+          <td>?</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-tip">
+      <span class="callout-icon">✓</span>
+      <div class="callout-body"><strong>What you want to show:</strong> The STDP version reduces jerk <em>and</em> oscillation compared to the surrogate-only SNN, while maintaining similar accuracy. This validates that learned timing (STDP) adds value beyond the basic energy savings. Even partial improvement here is a result.</div>
+    </div>
+
+    <h3>The 100-episode runner — implement this in train.py</h3>
+    <div class="code-block">
+      <span class="code-label">train.py · experiment runner</span>
+      <pre><span class="kw">import</span> gymnasium <span class="kw">as</span> gym
+<span class="kw">import</span> pandas <span class="kw">as</span> pd
+<span class="kw">from</span> evaluate <span class="kw">import</span> log_episode
+
+<span class="kw">def</span> <span class="fn">run_experiment</span>(controller, controller_name, n_episodes=<span class="nu">100</span>):
+    env = gym.make(<span class="st">'CartPole-v1'</span>)
+    results = []
+    
+    <span class="kw">for</span> ep <span class="kw">in</span> range(n_episodes):
+        obs, _ = env.reset(seed=ep)    <span class="cm"># fix seed for reproducibility</span>
+        positions, spike_counts = [], []
+        done = <span class="kw">False</span>
+        
+        <span class="kw">while not</span> done:
+            action, spike_count = controller(obs)
+            obs, reward, terminated, truncated, _ = env.step(action)
+            positions.append(obs[<span class="nu">0</span>])   <span class="cm"># cart position</span>
+            spike_counts.append(spike_count)
+            done = terminated <span class="kw">or</span> truncated
+        
+        metrics = log_episode(
+            controller_name, positions,
+            sum(spike_counts), flop_count=<span class="kw">None</span>
+        )
+        results.append(metrics)
+        <span class="kw">if</span> ep % <span class="nu">10</span> == <span class="nu">0</span>: print(<span class="st">f"Episode {ep}/100 done"</span>)
+    
+    env.close()
+    df = pd.DataFrame(results)
+    df.to_csv(<span class="st">f"outputs/{controller_name}_results.csv"</span>, index=<span class="kw">False</span>)
+    <span class="kw">return</span> df</pre>
+    </div>
+
+    <h3>If the SNN underperforms on jerk — this is still valid</h3>
+    <div class="callout callout-key">
+      <span class="callout-icon">◈</span>
+      <div class="callout-body"><strong>Don't fear the negative result.</strong> A paper saying "SNNs save 80% of compute but don't yet match polynomial planners on jerk — here's why (discrete timesteps vs continuous polynomial math, spike noise, STDP convergence requirements) — and here's what's needed" is honest, publishable, and arguably more useful than cherry-picked positives. Frame limitations as future work directions.</div>
+    </div>
+
+    <h3>Optional level-up (Week 11, only if Phase 3 is done)</h3>
+    <p>Swap cart-pole for a 2-DOF robot arm in PyBullet or MuJoCo. Both are free and laptop-friendly. The physics are more realistic and the jerk problem is more visible on multi-joint motion. But do not sacrifice clean metrics for this upgrade.</p>
+
+    <div class="code-block">
+      <span class="code-label">Terminal · install PyBullet if you upgrade</span>
+      <pre>pip install pybullet
+<span class="cm"># Test:</span>
+python -c <span class="st">"import pybullet; print('PyBullet OK')"</span></pre>
+    </div>
+
+    <div class="checkpoint">
+      <div class="checkpoint-label">Week 11 Checkpoint</div>
+      <p><strong>You pass if:</strong> You have a CSV file with 100-episode results for all three controllers, with all four metrics per episode. Mean ± std computed. This is your paper's Table 1. If you have this, Phase 3 is complete.</p>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- PHASE 4: WRITE-UP                           -->
+  <!-- ════════════════════════════════════════════ -->
+  <div id="phase4">
+    <div class="phase-header">
+      <span class="phase-num p4">Phase 4</span>
+      <h2>Analysis &amp; Write-Up — Weeks 12–14</h2>
+    </div>
+
+    <p class="section-lead">The paper is already written in your data. Your job is to frame the story clearly and submit to the right venues in the right order.</p>
+
+    <h3>Results &amp; plotting — do this in Week 12</h3>
+    <div class="code-block">
+      <span class="code-label">results.py · the four figures you need</span>
+      <pre><span class="kw">import</span> matplotlib.pyplot <span class="kw">as</span> plt
+<span class="kw">import</span> pandas <span class="kw">as</span> pd
+<span class="kw">import</span> numpy <span class="kw">as</span> np
+
+<span class="kw">def</span> <span class="fn">plot_jerk_comparison</span>(dfs, names):
+    <span class="st">"""Figure 1: Box plot of peak jerk across 100 episodes, all controllers."""</span>
+    fig, ax = plt.subplots(figsize=(<span class="nu">8</span>, <span class="nu">4</span>))
+    data = [df[<span class="st">'peak_jerk'</span>].values <span class="kw">for</span> df <span class="kw">in</span> dfs]
+    ax.boxplot(data, labels=names)
+    ax.set_ylabel(<span class="st">'Peak Jerk (m/s³)'</span>)
+    ax.set_title(<span class="st">'Jerk Comparison: 100 episodes each'</span>)
+    plt.tight_layout()
+    plt.savefig(<span class="st">'outputs/fig1_jerk_comparison.pdf'</span>)
+
+<span class="kw">def</span> <span class="fn">plot_energy_tradeoff</span>(dfs, names):
+    <span class="st">"""Figure 2: Scatter — FLOPs/step vs peak jerk. The key tradeoff plot."""</span>
+    fig, ax = plt.subplots(figsize=(<span class="nu">6</span>, <span class="nu">5</span>))
+    colors = [<span class="st">'#c8440a'</span>, <span class="st">'#1a6b5e'</span>, <span class="st">'#4a3d8c'</span>]
+    <span class="kw">for</span> df, name, c <span class="kw">in</span> zip(dfs, names, colors):
+        ax.scatter(df[<span class="st">'flops'</span>].mean(), df[<span class="st">'peak_jerk'</span>].mean(),
+                  label=name, color=c, s=<span class="nu">120</span>, zorder=<span class="nu">5</span>)
+        ax.errorbar(df[<span class="st">'flops'</span>].mean(), df[<span class="st">'peak_jerk'</span>].mean(),
+                   xerr=df[<span class="st">'flops'</span>].std(), yerr=df[<span class="st">'peak_jerk'</span>].std(),
+                   color=c, alpha=<span class="nu">0.4</span>)
+    ax.set_xlabel(<span class="st">'FLOPs per step (lower = more efficient)'</span>)
+    ax.set_ylabel(<span class="st">'Peak Jerk (lower = smoother)'</span>)
+    ax.legend()
+    plt.tight_layout()
+    plt.savefig(<span class="st">'outputs/fig2_energy_tradeoff.pdf'</span>)</pre>
+    </div>
+
+    <h3>Submission targets — in this exact order</h3>
+    <div class="resource-grid">
+      <div class="resource-card">
+        <span class="resource-type rt-paper">1st: arXiv</span>
+        <div class="resource-name">Post preprint first</div>
+        <div class="resource-desc">Establishes priority. Gets your work visible before conference deadlines. Free. Submit as cs.NE or cs.RO</div>
+      </div>
+      <div class="resource-card">
+        <span class="resource-type rt-paper">2nd: IROS 2026</span>
+        <div class="resource-name">Late-breaking results</div>
+        <div class="resource-desc">Lower bar than main track. Perfect for strong experimental results. Check iros2026.org for deadline</div>
+      </div>
+      <div class="resource-card">
+        <span class="resource-type rt-paper">3rd: ICRA 2027</span>
+        <div class="resource-name">Workshop: neuromorphic robotics</div>
+        <div class="resource-desc">Abstract deadline usually Sept–Oct 2026. Best fit for your topic. Workshops are student-friendly</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="section-rule">
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- PAPER GUIDE                                 -->
+  <!-- ════════════════════════════════════════════ -->
+  <div id="paper">
+    <div class="phase-header">
+      <span class="phase-num p0">Paper</span>
+      <h2>Complete Paper Structure — Section by Section</h2>
+    </div>
+
+    <p class="section-lead">Click each section to expand the detailed writing guide. Every section has a word count target, required content, and common pitfalls to avoid.</p>
+
+    <div class="paper-section open">
+      <div class="paper-section-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="section-num">1</span>
+        <span class="section-name">Abstract</span>
+        <span class="section-detail">150 words target</span>
+        <span class="section-chevron">›</span>
+      </div>
+      <div class="paper-section-body">
+        <p><strong>Formula:</strong> [Problem] + [Approach] + [Key Result]</p>
+        <p><em>"Jerk-limited robot motion planning typically relies on hand-engineered polynomial trajectory planners that minimize smoothness analytically. We propose a biologically-plausible Spiking Neural Network (SNN) controller inspired by cerebellar timing mechanisms, using Leaky Integrate-and-Fire neurons trained with Spike-Timing Dependent Plasticity (STDP). We evaluate our approach on cart-pole deceleration tasks against a quintic polynomial baseline across four metrics: peak jerk, endpoint accuracy, computational cost (FLOPs/step), and post-stop oscillation. Our SNN achieves [X]% jerk reduction at [Y]% lower compute cost, demonstrating that learned spike timing can substitute analytical trajectory smoothing in energy-constrained robotics contexts."</em></p>
+        <p>Fill in [X] and [Y] from your Phase 3 results. Write this last.</p>
+      </div>
+    </div>
+
+    <div class="paper-section">
+      <div class="paper-section-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="section-num">2</span>
+        <span class="section-name">Introduction</span>
+        <span class="section-detail">400–500 words</span>
+        <span class="section-chevron">›</span>
+      </div>
+      <div class="paper-section-body">
+        <p><strong>Four paragraphs:</strong></p>
+        <p><strong>P1 — The problem:</strong> Energy cost of inference in robotics AI. Cite recent work on neuromorphic computing (SpikeLLM, SpikeMamba). Set up why efficiency matters at the edge.</p>
+        <p><strong>P2 — The biological motivation:</strong> The cerebellum is a spiking network responsible specifically for smooth motion timing. Yamazaki &amp; Tanaka (2007), Casellato et al. (2014). The key insight: cerebellar circuits fire predictive signals before error occurs — forward models.</p>
+        <p><strong>P3 — The gap:</strong> Prior SNN-robotics work measures accuracy or energy, never smoothness (jerk). Polynomial planners minimize jerk analytically but are not energy-efficient. No prior work combines SNN controllers with jerk minimization as the evaluation criterion.</p>
+        <p><strong>P4 — Contributions:</strong> (1) First SNN controller evaluated against S-curve planners using jerk as primary metric. (2) Novel use of STDP for deceleration onset prediction. (3) Four-metric benchmark framework. End with your research question verbatim.</p>
+      </div>
+    </div>
+
+    <div class="paper-section">
+      <div class="paper-section-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="section-num">3</span>
+        <span class="section-name">Related Work</span>
+        <span class="section-detail">3 subsections</span>
+        <span class="section-chevron">›</span>
+      </div>
+      <div class="paper-section-body">
+        <p><strong>3.1 SNN energy efficiency:</strong> SpikeLLM (arXiv), SpikeMamba (arXiv), your arXiv 2510.27379 ref. Note that prior work focuses on classification tasks, not control.</p>
+        <p><strong>3.2 Jerk-limited trajectory planning:</strong> S-curves, quintic polynomials (cite Macfarlane &amp; Croft 2003). These are the analytical baseline you're competing against.</p>
+        <p><strong>3.3 Cerebellar-inspired controllers:</strong> Yamazaki &amp; Tanaka (2007) forward model, Casellato et al. (2014) robot control. Note: these don't use jerk as evaluation criterion and don't use modern surrogate gradient training.</p>
+        <p><strong>Gap statement:</strong> The intersection of (2) and (3) — SNN controllers evaluated on smoothness — is unexplored. That's your contribution.</p>
+      </div>
+    </div>
+
+    <div class="paper-section">
+      <div class="paper-section-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="section-num">4</span>
+        <span class="section-name">Method</span>
+        <span class="section-detail">Include architecture diagram</span>
+        <span class="section-chevron">›</span>
+      </div>
+      <div class="paper-section-body">
+        <p><strong>4.1 LIF neuron model:</strong> State the membrane equation: <code>τ · dV/dt = −V + I(t)</code>. Define β as the discrete decay factor. Spike when V &gt; V_th, reset to V_reset.</p>
+        <p><strong>4.2 STDP update rule:</strong> State the full rule mathematically. Define the timing window parameters. Explain why this is biologically plausible — it's Hebbian learning with temporal structure.</p>
+        <p><strong>4.3 Event encoding:</strong> Show your velocity_to_spikes function as pseudocode. Explain the threshold choice and dead zone. This is how continuous cart-pole state becomes spike trains.</p>
+        <p><strong>4.4 Architecture:</strong> Input layer → 2–3 LIF hidden layers → STDP timing layer → rate-decoded output. Include a figure (draw it in matplotlib or use tikz if you know LaTeX).</p>
+        <p><strong>4.5 Training procedure:</strong> Phase 1 — surrogate gradient backprop trains LIF hidden layers. Phase 2 — STDP online updates the timing layer weights. No end-to-end gradient through STDP.</p>
+      </div>
+    </div>
+
+    <div class="paper-section">
+      <div class="paper-section-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="section-num">5</span>
+        <span class="section-name">Experiments</span>
+        <span class="section-detail">Your Phase 3 results</span>
+        <span class="section-chevron">›</span>
+      </div>
+      <div class="paper-section-body">
+        <p><strong>5.1 Setup:</strong> OpenAI Gymnasium CartPole-v1. 100 episodes per controller. Fixed seeds for reproducibility. Describe the stop task: cart must decelerate from v=v0 to v=0 at position x=0.</p>
+        <p><strong>5.2 Baselines:</strong> (1) Quintic polynomial planner (analytical). (2) SNN with surrogate gradient only (no STDP).</p>
+        <p><strong>5.3 Results:</strong> Table 1 — four metrics, mean ± std, all three controllers. Figure 1 — jerk distribution box plots. Figure 2 — energy vs jerk scatter (the key tradeoff).</p>
+        <p><strong>5.4 Ablation:</strong> Compare STDP timing window parameters. Show that τ+/τ− choice affects jerk quality. This demonstrates that STDP is doing real work, not just regularizing.</p>
+      </div>
+    </div>
+
+    <div class="paper-section">
+      <div class="paper-section-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="section-num">6</span>
+        <span class="section-name">Discussion &amp; Conclusion</span>
+        <span class="section-detail">Honest limitations = credibility</span>
+        <span class="section-chevron">›</span>
+      </div>
+      <div class="paper-section-body">
+        <p><strong>Discussion must address:</strong></p>
+        <p><strong>Why STDP helps (or doesn't):</strong> If it helps — explain the timing window mechanism. If it doesn't — explain why discrete timesteps make it hard to match continuous polynomial math, and what would be needed (finer temporal resolution, adaptive thresholds).</p>
+        <p><strong>Limitations to address honestly:</strong> (1) Simulation-to-real gap — Gymnasium physics are idealized. (2) Spike noise — LIF spikes are stochastic; polynomial planners are deterministic. (3) STDP convergence — sensitive to hyperparameters. (4) GPU scaling — cart-pole is small; does this hold at larger state spaces?</p>
+        <p><strong>Future work:</strong> Real hardware implementation, DVS camera as event input (this is the natural sensor for SNNs), multi-DOF arms, online STDP adaptation.</p>
+        <p><strong>Conclusion:</strong> One paragraph. Restate research question, answer it based on your results, and give one forward-looking statement.</p>
+      </div>
+    </div>
+  </div>
+
+  <hr class="section-rule">
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- RISK TABLE                                  -->
+  <!-- ════════════════════════════════════════════ -->
+  <div id="risks">
+    <div class="phase-header">
+      <span class="phase-num p0">Risks</span>
+      <h2>Honest Risk Assessment &amp; Mitigations</h2>
+    </div>
+
+    <div class="risk-table">
+      <div class="risk-row header">
+        <span>Risk</span>
+        <span>Likelihood</span>
+        <span>Mitigation</span>
+      </div>
+      <div class="risk-row">
+        <span>SNN doesn't beat poly planner on jerk</span>
+        <span><span class="risk-label med">Medium</span></span>
+        <span style="font-size:13px; color: var(--ink-muted);">Reframe as "SNN matches jerk at 80% lower compute" — still novel. Lead with energy efficiency, present jerk as near-match.</span>
+      </div>
+      <div class="risk-row">
+        <span>STDP layer is hard to tune (your biggest real risk)</span>
+        <span><span class="risk-label med-hi">Med-High</span></span>
+        <span style="font-size:13px; color: var(--ink-muted);">Budget all of Week 8 for debugging. Start with A+=A−=0.01, τ±=20ms. If it won't converge: fall back to surrogate-only SNN; STDP becomes "future work."</span>
+      </div>
+      <div class="risk-row">
+        <span>Cart-pole too simple to show jerk clearly</span>
+        <span><span class="risk-label low">Low</span></span>
+        <span style="font-size:13px; color: var(--ink-muted);">Use a velocity-limited stop task variant instead of full balancing. Or upgrade to 2-DOF arm in PyBullet (Week 11).</span>
+      </div>
+      <div class="risk-row">
+        <span>Results not statistically clean</span>
+        <span><span class="risk-label low">Low</span></span>
+        <span style="font-size:13px; color: var(--ink-muted);">100 episodes + standard deviation handles this. Fix random seeds (seed=episode_number) for reproducibility.</span>
+      </div>
+      <div class="risk-row">
+        <span>Computation too slow on CPU</span>
+        <span><span class="risk-label low">Low</span></span>
+        <span style="font-size:13px; color: var(--ink-muted);">Cart-pole in Gymnasium is near-instantaneous. If slow: reduce num_steps from 25 to 10, reduce hidden layer size. Free Colab T4 as fallback.</span>
+      </div>
+    </div>
+  </div>
+
+  <hr class="section-rule">
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- MATH REFERENCE                              -->
+  <!-- ════════════════════════════════════════════ -->
+  <div id="math">
+    <div class="phase-header">
+      <span class="phase-num p0">Reference</span>
+      <h2>Math &amp; Key Equations Reference Sheet</h2>
+    </div>
+
+    <p class="section-lead">The equations you need to know cold. Referenced in your Method section. Derivable from first principles if asked by reviewers.</p>
+
+    <table class="concept-table">
+      <thead><tr><th>Name</th><th>Equation</th><th>What it means in your work</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="term-cell">LIF membrane</td>
+          <td><span class="formula">τ·dV/dt = −V + I(t)</span></td>
+          <td>Voltage leaks toward 0, driven by input current I. When V &gt; V_th, spike fires and V resets</td>
+        </tr>
+        <tr>
+          <td class="term-cell">Discrete LIF (snnTorch)</td>
+          <td><span class="formula">V[t+1] = β·V[t] + I[t]·(1−s[t])</span></td>
+          <td>β is your decay parameter (0–1). s[t]=1 when spike fires. This is what you tune</td>
+        </tr>
+        <tr>
+          <td class="term-cell">STDP (potentiation)</td>
+          <td><span class="formula">ΔW = A+ · exp(−Δt/τ+), Δt&gt;0</span></td>
+          <td>Pre fires before post: synapse strengthens. Δt is the time difference between spikes</td>
+        </tr>
+        <tr>
+          <td class="term-cell">STDP (depression)</td>
+          <td><span class="formula">ΔW = −A− · exp(Δt/τ−), Δt&lt;0</span></td>
+          <td>Post fires before pre: synapse weakens. Together LTP+LTD shape the timing window</td>
+        </tr>
+        <tr>
+          <td class="term-cell">Jerk</td>
+          <td><span class="formula">J(t) = d³x/dt³ = ẍ̇</span></td>
+          <td>3rd time derivative of position. Your core metric. Numerically: np.gradient(np.gradient(np.gradient(pos)))</td>
+        </tr>
+        <tr>
+          <td class="term-cell">Quintic jerk</td>
+          <td><span class="formula">J(t) = 6a₃ + 24a₄t + 60a₅t²</span></td>
+          <td>The polynomial baseline jerk function. Coefficients solved analytically from boundary conditions</td>
+        </tr>
+        <tr>
+          <td class="term-cell">Surrogate gradient</td>
+          <td><span class="formula">∂s/∂U ≈ σ'(U) = σ(U)·(1−σ(U))</span></td>
+          <td>Approximate gradient of spike function. Makes SNN trainable with backprop despite non-differentiable spikes</td>
+        </tr>
+        <tr>
+          <td class="term-cell">Spike count (energy proxy)</td>
+          <td><span class="formula">E ∝ Σₜ Σₙ sₙ(t)</span></td>
+          <td>Total spikes fired across all neurons and timesteps. Proportional to synaptic operations = energy cost</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Key papers — where to find them</h3>
+    <div class="resource-grid">
+      <div class="resource-card">
+        <span class="resource-type rt-paper">arXiv free</span>
+        <div class="resource-name">SNN Future of Computing (arXiv 2510.27379)</div>
+        <div class="resource-desc">Read Sections 3 (energy) and 5 (training). Skip hardware sections for now</div>
+      </div>
+      <div class="resource-card">
+        <span class="resource-type rt-paper">Google Scholar</span>
+        <div class="resource-name">Yamazaki &amp; Tanaka (2007)</div>
+        <div class="resource-desc">"The cerebellum as a liquid state machine." Forward model principle</div>
+      </div>
+      <div class="resource-card">
+        <span class="resource-type rt-paper">Google Scholar</span>
+        <div class="resource-name">Casellato et al. (2014)</div>
+        <div class="resource-desc">"Adaptive robotic control driven by a versatile spiking cerebellar network"</div>
+      </div>
+      <div class="resource-card">
+        <span class="resource-type rt-paper">Google Scholar</span>
+        <div class="resource-name">Macfarlane &amp; Croft (2003)</div>
+        <div class="resource-desc">"Jerk-bounded manipulator trajectory planning." Your polynomial baseline reference</div>
+      </div>
+      <div class="resource-card">
+        <span class="resource-type rt-code">Docs</span>
+        <div class="resource-name">snnTorch Documentation</div>
+        <div class="resource-desc">snntorch.readthedocs.io — has LIF tutorial, STDP examples, surrogate gradient guide</div>
+      </div>
+      <div class="resource-card">
+        <span class="resource-type rt-tool">Gymnasium</span>
+        <div class="resource-name">CartPole-v1 env</div>
+        <div class="resource-desc">gymnasium.farama.org — state: [pos, vel, angle, angular_vel]. 4D input → your 8D spike vector</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer-bar">
+  SNN Research Manual · Cerebellar-Inspired Controllers for Jerk-Limited Robot Motion · 14-week plan
+</div>
+
+<script>
+  const links = document.querySelectorAll('.toc-link');
+  const sections = ['phase0','phase1','phase2','phase3','phase4','paper','risks','math'];
+  
+  window.addEventListener('scroll', () => {
+    let current = sections[0];
+    sections.forEach(id => {
+      const el = document.getElementById(id);
+      if (el && el.getBoundingClientRect().top < 120) current = id;
+    });
+    links.forEach(l => {
+      const href = l.getAttribute('href').replace('#','').replace('phase','phase').toLowerCase();
+      const matches = l.getAttribute('href') === '#' + current || 
+        (current.startsWith('phase') && l.getAttribute('href').includes(current.replace('phase','').split('').join('')));
+      l.classList.toggle('active', l.getAttribute('href') === '#' + current);
+    });
+  });
+</script>
+</body>
+</html>
