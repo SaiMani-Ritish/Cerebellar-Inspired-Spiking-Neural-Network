@@ -1,6 +1,6 @@
-# SNN Research (CartPole + MNIST)
+# Spiking Neural Networks for Adaptive Jerk-Limited Robot Motion 
 
-This repository contains a small spiking neural network (SNN) research sandbox:
+Trying to develop a cerebellar-inspired spiking neural network that learns adaptive, low-jerk robot motion through spike-timing-based control. This repository contains a small spiking neural network (SNN) research sandbox:
 
 - **MNIST sanity checks**: compare a dense ANN vs a simple LIF SNN.
 - **CartPole controller benchmark**: compare a smooth analytical baseline (quintic planner) vs an SNN controller trained with surrogate gradients, with an optional STDP timing layer.
